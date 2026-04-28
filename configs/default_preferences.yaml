@@ -1,0 +1,12 @@
+scan:
+  concurrency: 4
+  timeout_seconds: 20
+
+storage:
+  database_path: .internradar/internradar.sqlite3
+
+output:
+  exports_dir: .internradar/exports
+
+review:
+  overrides_path: .internradar/overrides.yaml
