@@ -25,15 +25,17 @@ class TestQuantEngineeringPack(unittest.TestCase):
 
         self.assertGreaterEqual(len(firms), 50)
 
-        slugs = [firm["slug"] for firm in firms]
+        ids = [firm["id"] for firm in firms]
         names = [firm["name"] for firm in firms]
 
-        self.assertEqual(len(slugs), len(set(slugs)))
+        self.assertEqual(len(ids), len(set(ids)))
         self.assertEqual(len(names), len(set(names)))
 
         for firm in firms:
             self.assertIn("website", firm)
             self.assertIn("careers_url", firm)
+            self.assertIn("ats_type", firm)
+            self.assertIn("default_prestige_tier", firm)
             self.assertTrue(firm["categories"])
 
     def test_prestige_tiers_reference_known_firms(self) -> None:

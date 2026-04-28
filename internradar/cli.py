@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import typer
 
+from internradar.commands.firms import app as firms_app
 from internradar.core.bootstrap import initialize_local_state
 
 app = typer.Typer(
@@ -51,15 +52,12 @@ def review() -> None:
 
 
 @app.command()
-def firms() -> None:
-    """Inspect firm configuration and coverage."""
-    _placeholder("firms")
-
-
-@app.command()
 def config() -> None:
     """Inspect or update local configuration."""
     _placeholder("config")
+
+
+app.add_typer(firms_app, name="firms")
 
 
 def main() -> None:
