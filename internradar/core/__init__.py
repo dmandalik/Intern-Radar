@@ -3,6 +3,18 @@
 from internradar.core.bootstrap import initialize_local_state
 from internradar.core.config import load_config, resolve_user_config_path
 from internradar.core.database import initialize_database
+from internradar.core.errors import (
+    CollectorError,
+    DatabaseError,
+    InternRadarError,
+    InvalidConfigError,
+    NetworkError,
+    ParseError,
+    RateLimitedError,
+    UnsupportedATSError,
+    VerificationError,
+    collector_error_from_exception,
+)
 from internradar.core.models import (
     ClassifiedRole,
     Company,
@@ -35,14 +47,19 @@ from internradar.core.paths import (
 
 __all__ = [
     "ClassifiedRole",
+    "CollectorError",
     "Company",
+    "collector_error_from_exception",
+    "DatabaseError",
     "default_config_path",
     "EligibilityInfo",
     "FirmValidationReport",
     "home_app_dir",
     "home_config_path",
+    "InternRadarError",
     "initialize_database",
     "initialize_local_state",
+    "InvalidConfigError",
     "Job",
     "JobScores",
     "JobStatusInfo",
@@ -54,11 +71,16 @@ __all__ = [
     "local_database_path",
     "local_exports_dir",
     "local_overrides_path",
+    "NetworkError",
     "PackDefinition",
     "PackLoaderError",
     "PackValidationError",
+    "ParseError",
+    "RateLimitedError",
     "RawJob",
     "resolve_user_config_path",
     "search_firms",
+    "UnsupportedATSError",
     "validate_pack_firms",
+    "VerificationError",
 ]
