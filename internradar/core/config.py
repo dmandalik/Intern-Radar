@@ -10,8 +10,10 @@ import yaml
 
 from internradar.core.paths import default_config_path, home_config_path, local_config_path
 
+AppConfig = dict[str, Any]
 
-def load_config(cwd: Path | None = None, home: Path | None = None) -> dict[str, Any]:
+
+def load_config(cwd: Path | None = None, home: Path | None = None) -> AppConfig:
     """Load default config plus optional home and local overrides."""
     config = _read_yaml_mapping(default_config_path())
 
@@ -48,7 +50,7 @@ def ensure_local_config(cwd: Path | None = None) -> Path:
     return target_path
 
 
-def _read_yaml_mapping(path: Path) -> dict[str, Any]:
+def _read_yaml_mapping(path: Path) -> AppConfig:
     """Read a YAML mapping file from disk."""
     data = yaml.safe_load(path.read_text()) or {}
     if not isinstance(data, Mapping):
