@@ -21,10 +21,11 @@ class CollectorRegistry:
     @classmethod
     def with_defaults(cls) -> CollectorRegistry:
         """Build a registry with the collectors shipped by default."""
+        from internradar.collectors.custom_page import CustomPageCollector
         from internradar.collectors.greenhouse import GreenhouseCollector
         from internradar.collectors.lever import LeverCollector
 
-        return cls([GreenhouseCollector(), LeverCollector()])
+        return cls([GreenhouseCollector(), LeverCollector(), CustomPageCollector()])
 
     def register(self, collector: BaseCollector | type[BaseCollector]) -> BaseCollector:
         """Register a collector instance or zero-argument class."""
