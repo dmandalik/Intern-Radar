@@ -1,0 +1,56 @@
+prestige_tiers:
+  tier_1:
+    - Jane Street
+    - Citadel
+    - Citadel Securities
+    - Hudson River Trading
+    - Jump Trading
+    - Two Sigma
+    - D. E. Shaw
+    - IMC Trading
+    - Optiver
+    - Susquehanna International Group
+  tier_2:
+    - DRW
+    - Tower Research Capital
+    - Akuna Capital
+    - Flow Traders
+    - Five Rings
+    - Headlands Technologies
+    - PDT Partners
+    - Cubist Systematic Strategies
+    - G-Research
+    - XTX Markets
+  tier_3:
+    - Maven Securities
+    - Old Mission
+    - XR Trading
+    - Valkyrie Trading
+    - Geneva Trading
+    - Belvedere Trading
+    - CTC
+    - Wolverine Trading
+    - PEAK6
+    - Virtu Financial
+  tier_4:
+    - TransMarket Group
+    - Teza Technologies
+    - Millennium
+    - Qube Research & Technologies
+    - Man Group
+    - Winton
+    - Squarepoint Capital
+    - Schonfeld
+    - Balyasny Asset Management
+    - ExodusPoint
+  tier_5:
+    - Marshall Wace
+    - AQR Capital Management
+    - WorldQuant
+    - TGS Management
+    - Arrowstreet Capital
+    - Radix Trading
+    - DV Trading
+    - RGM Advisors
+    - Quantlab
+    - Aquatic Capital Management

@@ -1,0 +1,276 @@
+firms:
+  - slug: jane_street
+    name: Jane Street
+    website: https://www.janestreet.com
+    careers_url: https://www.janestreet.com/join-jane-street/open-roles/
+    categories: [prop_trading, market_making]
+  - slug: citadel
+    name: Citadel
+    website: https://www.citadel.com
+    careers_url: https://www.citadel.com/careers/open-opportunities/
+    categories: [hedge_fund, multi_strategy]
+  - slug: citadel_securities
+    name: Citadel Securities
+    website: https://www.citadelsecurities.com
+    careers_url: https://www.citadelsecurities.com/careers/open-opportunities/
+    categories: [market_making, prop_trading]
+  - slug: hudson_river_trading
+    name: Hudson River Trading
+    website: https://www.hudsonrivertrading.com
+    careers_url: https://www.hudsonrivertrading.com/careers/
+    categories: [prop_trading, market_making]
+  - slug: imc_trading
+    name: IMC Trading
+    website: https://www.imc.com
+    careers_url: https://www.imc.com/us/careers/
+    categories: [prop_trading, market_making]
+  - slug: optiver
+    name: Optiver
+    website: https://www.optiver.com
+    careers_url: https://optiver.com/working-at-optiver/career-opportunities/
+    categories: [prop_trading, market_making]
+  - slug: drw
+    name: DRW
+    website: https://www.drw.com
+    careers_url: https://www.drw.com/work-at-drw/listings/
+    categories: [prop_trading, market_making]
+  - slug: jump_trading
+    name: Jump Trading
+    website: https://www.jumptrading.com
+    careers_url: https://www.jumptrading.com/careers/
+    categories: [prop_trading, market_making]
+  - slug: tower_research_capital
+    name: Tower Research Capital
+    website: https://www.tower-research.com
+    careers_url: https://www.tower-research.com/open-positions/
+    categories: [prop_trading, hft]
+  - slug: two_sigma
+    name: Two Sigma
+    website: https://www.twosigma.com
+    careers_url: https://careers.twosigma.com
+    categories: [hedge_fund, systematic]
+  - slug: sigma
+    name: Susquehanna International Group
+    website: https://www.sig.com
+    careers_url: https://careers.sig.com
+    categories: [prop_trading, market_making]
+  - slug: de_shaw
+    name: D. E. Shaw
+    website: https://www.deshaw.com
+    careers_url: https://www.deshaw.com/careers
+    categories: [hedge_fund, systematic]
+  - slug: akuna_capital
+    name: Akuna Capital
+    website: https://akunacapital.com
+    careers_url: https://akunacapital.com/careers
+    categories: [prop_trading, options]
+  - slug: flow_traders
+    name: Flow Traders
+    website: https://www.flowtraders.com
+    careers_url: https://www.flowtraders.com/careers/
+    categories: [market_making, etf]
+  - slug: maven_securities
+    name: Maven Securities
+    website: https://www.mavensecurities.com
+    careers_url: https://www.mavensecurities.com/careers/
+    categories: [market_making, prop_trading]
+  - slug: old_mission
+    name: Old Mission
+    website: https://www.oldmissioncapital.com
+    careers_url: https://www.oldmissioncapital.com/careers
+    categories: [market_making, prop_trading]
+  - slug: xr_trading
+    name: XR Trading
+    website: https://www.xrtrading.com
+    careers_url: https://www.xrtrading.com/careers/
+    categories: [prop_trading, derivatives]
+  - slug: valkyrie_trading
+    name: Valkyrie Trading
+    website: https://www.valkyrietrading.com
+    careers_url: https://www.valkyrietrading.com/careers
+    categories: [prop_trading, options]
+  - slug: geneva_trading
+    name: Geneva Trading
+    website: https://www.genevatrading.com
+    careers_url: https://www.genevatrading.com/careers
+    categories: [prop_trading, derivatives]
+  - slug: belvedere_trading
+    name: Belvedere Trading
+    website: https://www.belvederetrading.com
+    careers_url: https://www.belvederetrading.com/careers
+    categories: [prop_trading, market_making]
+  - slug: ctc
+    name: CTC
+    website: https://www.ctc.trading
+    careers_url: https://www.ctc.trading/careers/
+    categories: [prop_trading, derivatives]
+  - slug: wolverine_trading
+    name: Wolverine Trading
+    website: https://www.wolve.com
+    careers_url: https://www.wolve.com/careers
+    categories: [prop_trading, market_making]
+  - slug: peak6
+    name: PEAK6
+    website: https://www.peak6.com
+    careers_url: https://www.peak6.com/careers
+    categories: [prop_trading, fintech]
+  - slug: virtu_financial
+    name: Virtu Financial
+    website: https://www.virtu.com
+    careers_url: https://www.virtu.com/careers/
+    categories: [market_making, electronic_trading]
+  - slug: five_rings
+    name: Five Rings
+    website: https://fiverings.com
+    careers_url: https://fiverings.com/careers/
+    categories: [prop_trading, hft]
+  - slug: headlands_technologies
+    name: Headlands Technologies
+    website: https://www.headlandstech.com
+    careers_url: https://www.headlandstech.com/careers/
+    categories: [prop_trading, hft]
+  - slug: pdt_partners
+    name: PDT Partners
+    website: https://www.pdtpartners.com
+    careers_url: https://www.pdtpartners.com/join-us/
+    categories: [hedge_fund, systematic]
+  - slug: cubist
+    name: Cubist Systematic Strategies
+    website: https://www.point72.com/cubist/
+    careers_url: https://careers.point72.com
+    categories: [hedge_fund, systematic]
+  - slug: transmarket_group
+    name: TransMarket Group
+    website: https://www.transmarketgroup.com
+    careers_url: https://www.transmarketgroup.com/careers/
+    categories: [prop_trading, hft]
+  - slug: teza_technologies
+    name: Teza Technologies
+    website: https://www.teza.com
+    careers_url: https://www.teza.com/careers
+    categories: [prop_trading, hft]
+  - slug: g_research
+    name: G-Research
+    website: https://www.gresearch.com
+    careers_url: https://www.gresearch.com/careers/
+    categories: [hedge_fund, systematic]
+  - slug: millennium
+    name: Millennium
+    website: https://www.mlp.com
+    careers_url: https://www.mlp.com/careers
+    categories: [hedge_fund, multi_strategy]
+  - slug: qube_research_and_technologies
+    name: Qube Research & Technologies
+    website: https://www.qube-rt.com
+    careers_url: https://www.qube-rt.com/careers/
+    categories: [hedge_fund, systematic]
+  - slug: man_group
+    name: Man Group
+    website: https://www.man.com
+    careers_url: https://www.man.com/careers
+    categories: [asset_management, systematic]
+  - slug: winton
+    name: Winton
+    website: https://www.winton.com
+    careers_url: https://www.winton.com/careers
+    categories: [asset_management, systematic]
+  - slug: squarepoint_capital
+    name: Squarepoint Capital
+    website: https://www.squarepoint-capital.com
+    careers_url: https://www.squarepoint-capital.com/careers
+    categories: [hedge_fund, systematic]
+  - slug: schonfeld
+    name: Schonfeld
+    website: https://www.schonfeld.com
+    careers_url: https://www.schonfeld.com/careers
+    categories: [hedge_fund, multi_strategy]
+  - slug: balyasny
+    name: Balyasny Asset Management
+    website: https://www.bamfunds.com
+    careers_url: https://www.bamfunds.com/careers
+    categories: [hedge_fund, multi_strategy]
+  - slug: exoduspoint
+    name: ExodusPoint
+    website: https://www.exoduspoint.com
+    careers_url: https://www.exoduspoint.com/careers
+    categories: [hedge_fund, multi_strategy]
+  - slug: marshall_wace
+    name: Marshall Wace
+    website: https://www.mwam.com
+    careers_url: https://www.mwam.com/careers
+    categories: [hedge_fund, systematic]
+  - slug: aqr
+    name: AQR Capital Management
+    website: https://www.aqr.com
+    careers_url: https://www.aqr.com/About-Us/Careers
+    categories: [asset_management, systematic]
+  - slug: worldquant
+    name: WorldQuant
+    website: https://www.worldquant.com
+    careers_url: https://www.worldquant.com/careers/
+    categories: [hedge_fund, systematic]
+  - slug: tgs_management
+    name: TGS Management
+    website: https://www.tgsmgmt.com
+    careers_url: https://www.tgsmgmt.com/careers/
+    categories: [hedge_fund, systematic]
+  - slug: arrowstreet_capital
+    name: Arrowstreet Capital
+    website: https://www.arrowstreetcapital.com
+    careers_url: https://www.arrowstreetcapital.com/careers
+    categories: [asset_management, systematic]
+  - slug: radix_trading
+    name: Radix Trading
+    website: https://radixtrading.com
+    careers_url: https://radixtrading.com/careers/
+    categories: [prop_trading, hft]
+  - slug: dv_trading
+    name: DV Trading
+    website: https://www.dvtrading.co
+    careers_url: https://www.dvtrading.co/careers
+    categories: [prop_trading, derivatives]
+  - slug: rgm_advisors
+    name: RGM Advisors
+    website: https://www.rgmadvisors.com
+    careers_url: https://www.rgmadvisors.com/careers
+    categories: [prop_trading, hft]
+  - slug: quantlab
+    name: Quantlab
+    website: https://www.quantlab.com
+    careers_url: https://www.quantlab.com/careers
+    categories: [prop_trading, hft]
+  - slug: aquatic_capital_management
+    name: Aquatic Capital Management
+    website: https://www.aquatic.com
+    careers_url: https://www.aquatic.com/careers
+    categories: [hedge_fund, systematic]
+  - slug: rokos_capital_management
+    name: Rokos Capital Management
+    website: https://www.rokoscapital.com
+    careers_url: https://www.rokoscapital.com/careers
+    categories: [hedge_fund, macro]
+  - slug: xtx_markets
+    name: XTX Markets
+    website: https://www.xtxmarkets.com
+    careers_url: https://www.xtxmarkets.com/careers/
+    categories: [market_making, systematic]
+  - slug: allston_trading
+    name: Allston Trading
+    website: https://www.allstontrading.com
+    careers_url: https://www.allstontrading.com/careers
+    categories: [prop_trading, options]
+  - slug: voleon
+    name: The Voleon Group
+    website: https://www.voleon.com
+    careers_url: https://www.voleon.com/careers/
+    categories: [hedge_fund, machine_learning]
+  - slug: point72
+    name: Point72
+    website: https://www.point72.com
+    careers_url: https://careers.point72.com
+    categories: [hedge_fund, multi_strategy]
+  - slug: trexquant_investment
+    name: Trexquant Investment
+    website: https://www.trexquant.com
+    careers_url: https://www.trexquant.com/careers/
+    categories: [hedge_fund, systematic]

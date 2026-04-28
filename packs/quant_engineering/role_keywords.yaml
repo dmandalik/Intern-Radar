@@ -1,0 +1,72 @@
+role_keywords:
+  software_engineering:
+    - software engineer
+    - software developer
+    - full stack
+    - backend engineer
+    - frontend engineer
+    - distributed systems
+    - infrastructure engineer
+    - platform engineer
+    - systems engineer
+    - site reliability
+  quant_developer:
+    - quant developer
+    - quantitative developer
+    - quant engineer
+    - quant platform
+    - research engineer
+    - modeling engineer
+    - alpha platform
+    - simulation platform
+  low_latency_engineering:
+    - low latency
+    - ultra low latency
+    - performance engineering
+    - kernel bypass
+    - feed handler
+    - exchange connectivity
+    - market data
+    - order gateway
+    - execution platform
+    - network engineering
+  trading_systems:
+    - trading systems
+    - electronic trading
+    - execution systems
+    - trading infrastructure
+    - market making
+    - order management
+    - exchange systems
+    - post-trade
+  data_engineering:
+    - data engineer
+    - data platform
+    - data pipeline
+    - analytics engineering
+    - batch processing
+    - streaming data
+    - data infrastructure
+  quantitative_research:
+    - quantitative researcher
+    - quant researcher
+    - systematic research
+    - signal research
+    - alpha research
+    - statistical research
+    - machine learning research
+  fpga_engineering:
+    - fpga
+    - verilog
+    - vhdl
+    - digital design
+    - hardware acceleration
+    - rtl
+    - hardware engineer
+  production_engineering:
+    - production engineer
+    - devops
+    - observability
+    - linux systems
+    - automation engineer
+    - release engineering
