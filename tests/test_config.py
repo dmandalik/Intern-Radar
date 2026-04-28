@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from internradar.core.config import load_config, resolve_user_config_path
+from internradar.core.config import ensure_local_config, load_config, resolve_user_config_path
 
 
 class TestConfigLoading(unittest.TestCase):
@@ -86,3 +86,13 @@ class TestConfigLoading(unittest.TestCase):
             local_config.write_text("scan:\n  concurrency: 3\n")
 
             self.assertEqual(resolve_user_config_path(cwd=cwd, home=home), local_config)
+
+    def test_ensure_local_config_creates_default_local_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            cwd = Path(temp_dir)
+
+            config_path = ensure_local_config(cwd)
+
+            self.assertEqual(config_path, cwd / ".internradar" / "config.yaml")
+            self.assertTrue(config_path.exists())
+            self.assertIn("concurrency: 4", config_path.read_text())
