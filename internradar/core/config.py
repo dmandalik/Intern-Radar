@@ -39,6 +39,15 @@ def resolve_user_config_path(cwd: Path | None = None, home: Path | None = None) 
     return None
 
 
+def ensure_local_config(cwd: Path | None = None) -> Path:
+    """Create the workspace-local config file from defaults if needed."""
+    target_path = local_config_path(cwd)
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    if not target_path.exists():
+        target_path.write_text(default_config_path().read_text())
+    return target_path
+
+
 def _read_yaml_mapping(path: Path) -> dict[str, Any]:
     """Read a YAML mapping file from disk."""
     data = yaml.safe_load(path.read_text()) or {}

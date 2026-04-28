@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import typer
 
+from internradar.core.bootstrap import initialize_local_state
+
 app = typer.Typer(
     help="Intern Radar command-line interface.",
     no_args_is_help=True,
@@ -19,7 +21,9 @@ def _placeholder(command_name: str) -> None:
 @app.command()
 def init() -> None:
     """Initialize local Intern Radar state."""
-    _placeholder("init")
+    config_path, database_path = initialize_local_state()
+    typer.echo(f"Created config: {config_path}")
+    typer.echo(f"Created database: {database_path}")
 
 
 @app.command()
