@@ -18,6 +18,13 @@ class CollectorRegistry:
         for collector in collectors or []:
             self.register(collector)
 
+    @classmethod
+    def with_defaults(cls) -> CollectorRegistry:
+        """Build a registry with the collectors shipped by default."""
+        from internradar.collectors.greenhouse import GreenhouseCollector
+
+        return cls([GreenhouseCollector()])
+
     def register(self, collector: BaseCollector | type[BaseCollector]) -> BaseCollector:
         """Register a collector instance or zero-argument class."""
         instance = collector() if isinstance(collector, type) else collector
