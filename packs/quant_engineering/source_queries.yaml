@@ -1,0 +1,21 @@
+source_queries:
+  internship:
+    - quant engineering internship
+    - quant software engineer internship
+    - trading systems internship
+    - electronic trading internship
+    - low latency internship
+    - market data engineer internship
+    - FPGA internship trading
+  new_grad:
+    - quant software engineer new grad
+    - quantitative developer new grad
+    - trading infrastructure new grad
+    - systems engineer trading new grad
+    - quantitative research new grad
+  focus_areas:
+    - C++ trading intern
+    - Python quant intern
+    - FPGA trading intern
+    - machine learning quant intern
+    - exchange connectivity intern
