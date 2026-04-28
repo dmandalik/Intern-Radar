@@ -13,6 +13,7 @@ authors = [
   { name = "Intern Radar contributors" },
 ]
 dependencies = [
+  "PyYAML>=6,<7",
   "typer>=0.12,<1.0",
 ]
 
