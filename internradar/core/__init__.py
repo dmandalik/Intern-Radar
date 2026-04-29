@@ -31,6 +31,7 @@ from internradar.core.pack_loader import (
     PackValidationError,
     load_pack,
     load_pack_firms,
+    load_pack_role_keywords,
     search_firms,
     validate_pack_firms,
 )
@@ -65,6 +66,7 @@ __all__ = [
     "JobStatusInfo",
     "load_pack",
     "load_pack_firms",
+    "load_pack_role_keywords",
     "load_config",
     "local_app_dir",
     "local_config_path",
