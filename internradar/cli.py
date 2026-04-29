@@ -5,6 +5,7 @@ from __future__ import annotations
 import typer
 
 from internradar.commands.firms import app as firms_app
+from internradar.commands.scan import scan as scan_command
 from internradar.core.bootstrap import initialize_local_state
 
 app = typer.Typer(
@@ -27,10 +28,7 @@ def init() -> None:
     typer.echo(f"Created database: {database_path}")
 
 
-@app.command()
-def scan() -> None:
-    """Scan configured internship sources."""
-    _placeholder("scan")
+app.command()(scan_command)
 
 
 @app.command()

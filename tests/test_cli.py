@@ -8,7 +8,7 @@ from typer.testing import CliRunner
 
 from internradar.cli import app
 
-PLACEHOLDER_COMMAND_NAMES = ("scan", "dashboard", "export", "review", "config")
+PLACEHOLDER_COMMAND_NAMES = ("dashboard", "export", "review", "config")
 
 
 class TestCli(unittest.TestCase):
