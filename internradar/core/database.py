@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import sqlite3
+from datetime import datetime
 from pathlib import Path
+from typing import Any
 
+from internradar.core.errors import DatabaseError
 from internradar.core.paths import local_database_path
 
 SCHEMA_STATEMENTS = (
@@ -83,3 +87,40 @@ def initialize_database(cwd: Path | None = None) -> Path:
         connection.close()
 
     return database_path
+
+
+def record_scan_run(
+    *,
+    started_at: datetime,
+    completed_at: datetime,
+    status: str,
+    trigger: str | None = None,
+    notes: dict[str, Any] | None = None,
+    cwd: Path | None = None,
+) -> int:
+    """Persist a scan run summary to the local SQLite database."""
+    database_path = local_database_path(cwd)
+    if not database_path.exists():
+        raise DatabaseError(
+            f"Local database was not found at {database_path}. Run `internradar init` first.",
+        )
+
+    connection = sqlite3.connect(database_path)
+    try:
+        cursor = connection.execute(
+            """
+            INSERT INTO scan_runs (started_at, completed_at, status, trigger, notes)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                started_at.isoformat(),
+                completed_at.isoformat(),
+                status,
+                trigger,
+                json.dumps(notes, sort_keys=True) if notes is not None else None,
+            ),
+        )
+        connection.commit()
+        return int(cursor.lastrowid)
+    finally:
+        connection.close()
