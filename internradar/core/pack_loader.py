@@ -78,6 +78,19 @@ def load_pack_firms(pack_name: str, root: Path | None = None) -> list[Company]:
     return report.firms
 
 
+def load_pack_role_keywords(pack_name: str, root: Path | None = None) -> dict[str, Any]:
+    """Load role keyword configuration for a pack."""
+    pack = load_pack(pack_name, root=root)
+    keywords_path = pack.path / "role_keywords.yaml"
+    payload = _read_pack_mapping(keywords_path, expected_key="role_keywords")
+    role_keywords = payload.get("role_keywords")
+    if not isinstance(role_keywords, Mapping):
+        raise PackLoaderError(
+            f"{keywords_path} must contain a top-level 'role_keywords' mapping.",
+        )
+    return payload
+
+
 def validate_pack_firms(pack_name: str, root: Path | None = None) -> FirmValidationReport:
     """Load and validate firm records for a pack."""
     pack = load_pack(pack_name, root=root)
@@ -128,22 +141,7 @@ def search_firms(firms: Iterable[Company], query: str) -> list[Company]:
 
 def _read_firm_records(pack: PackDefinition) -> list[dict[str, Any]]:
     firms_path = pack.path / "firms.yaml"
-    if not firms_path.exists():
-        raise PackLoaderError(
-            f"Pack '{pack.name}' is missing firms.yaml at {firms_path}.",
-        )
-
-    try:
-        payload = yaml.safe_load(firms_path.read_text()) or {}
-    except yaml.YAMLError as exc:
-        raise PackLoaderError(
-            f"Invalid YAML in {firms_path}: {exc}",
-        ) from exc
-
-    if not isinstance(payload, Mapping):
-        raise PackLoaderError(
-            f"{firms_path} must contain a top-level mapping with a 'firms' key.",
-        )
+    payload = _read_pack_mapping(firms_path, expected_key="firms")
 
     firms = payload.get("firms")
     if not isinstance(firms, list):
@@ -152,6 +150,27 @@ def _read_firm_records(pack: PackDefinition) -> list[dict[str, Any]]:
         )
 
     return firms
+
+
+def _read_pack_mapping(path: Path, *, expected_key: str) -> Mapping[str, Any]:
+    if not path.exists():
+        raise PackLoaderError(
+            f"Pack file is missing at {path}.",
+        )
+
+    try:
+        payload = yaml.safe_load(path.read_text()) or {}
+    except yaml.YAMLError as exc:
+        raise PackLoaderError(
+            f"Invalid YAML in {path}: {exc}",
+        ) from exc
+
+    if not isinstance(payload, Mapping):
+        raise PackLoaderError(
+            f"{path} must contain a top-level mapping with a '{expected_key}' key.",
+        )
+
+    return payload
 
 
 def _find_duplicates(values: Iterable[str]) -> list[str]:

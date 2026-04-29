@@ -1,72 +1,265 @@
 role_keywords:
-  software_engineering:
-    - software engineer
-    - software developer
-    - full stack
-    - backend engineer
-    - frontend engineer
-    - distributed systems
-    - infrastructure engineer
-    - platform engineer
-    - systems engineer
-    - site reliability
-  quant_developer:
-    - quant developer
-    - quantitative developer
-    - quant engineer
-    - quant platform
-    - research engineer
-    - modeling engineer
-    - alpha platform
-    - simulation platform
-  low_latency_engineering:
-    - low latency
-    - ultra low latency
-    - performance engineering
-    - kernel bypass
-    - feed handler
-    - exchange connectivity
-    - market data
-    - order gateway
-    - execution platform
-    - network engineering
-  trading_systems:
-    - trading systems
-    - electronic trading
-    - execution systems
-    - trading infrastructure
-    - market making
-    - order management
-    - exchange systems
-    - post-trade
-  data_engineering:
-    - data engineer
-    - data platform
-    - data pipeline
-    - analytics engineering
-    - batch processing
-    - streaming data
-    - data infrastructure
-  quantitative_research:
-    - quantitative researcher
-    - quant researcher
-    - systematic research
-    - signal research
-    - alpha research
-    - statistical research
-    - machine learning research
-  fpga_engineering:
-    - fpga
-    - verilog
-    - vhdl
-    - digital design
-    - hardware acceleration
-    - rtl
-    - hardware engineer
-  production_engineering:
-    - production engineer
-    - devops
-    - observability
-    - linux systems
-    - automation engineer
-    - release engineering
+  negative_keywords:
+    - sales
+    - operations
+    - compliance
+    - accounting
+    - marketing
+    - business development
+    - investment banking
+    - wealth management
+    - client services
+    - campus ambassador
+  role_preferences:
+    - trading_systems_engineer
+    - software_engineer_trading
+    - low_latency_engineer
+    - algorithmic_trading_engineer
+    - market_data_engineer
+    - infrastructure_engineer
+    - fpga_engineer
+    - hardware_trading_engineer
+    - quant_developer
+    - ml_engineer_quant
+    - data_engineer_quant
+    - research_engineer_quant
+    - quant_trading
+    - quant_research
+    - trading_operations
+    - finance_analyst
+    - other
+    - unknown
+  role_families:
+    quant_developer:
+      strong:
+        - quant developer
+        - quantitative developer
+        - quantitative software developer
+        - quant dev
+        - research engineer
+        - trading developer
+      medium:
+        - backtesting
+        - trading models
+        - research platform
+        - python
+        - c++
+        - quantitative systems
+      categories:
+        - quant_developer
+    trading_systems_engineer:
+      strong:
+        - trading systems
+        - trading platform
+        - trade execution
+        - execution systems
+        - order management
+        - market connectivity
+      medium:
+        - exchange connectivity
+        - order book
+        - matching engine
+        - market data
+        - real-time systems
+      categories:
+        - trading_systems_engineer
+    algorithmic_trading_engineer:
+      strong:
+        - algorithmic trading
+        - algo trading
+        - trading algorithms
+        - execution algorithms
+      medium:
+        - signal generation
+        - backtesting
+        - simulation
+        - market microstructure
+        - strategy development
+      categories:
+        - algorithmic_trading_engineer
+    software_engineer_trading:
+      strong:
+        - software engineer intern
+        - software engineering intern
+        - trading software
+        - engineering intern trading
+        - software engineer
+      medium:
+        - python
+        - java
+        - c++
+        - distributed systems
+        - backend
+        - infrastructure
+        - trading
+      categories:
+        - software_engineer_trading
+    low_latency_engineer:
+      strong:
+        - low latency
+        - ultra-low latency
+        - latency-sensitive
+        - high performance c++
+        - performance critical
+        - kernel bypass
+      medium:
+        - network programming
+        - linux systems
+        - profiling
+        - optimization
+        - real-time systems
+        - multithreading
+        - concurrency
+      categories:
+        - low_latency_engineer
+    market_data_engineer:
+      strong:
+        - market data
+        - market data engineer
+        - data feeds
+        - exchange data
+      medium:
+        - streaming data
+        - tick data
+        - order book
+        - real-time data
+      categories:
+        - market_data_engineer
+    infrastructure_engineer:
+      strong:
+        - infrastructure engineer
+        - platform engineer
+        - systems engineer
+        - distributed systems
+      medium:
+        - kubernetes
+        - linux
+        - backend
+        - databases
+        - cloud
+        - observability
+      categories:
+        - infrastructure_engineer
+    fpga_engineer:
+      strong:
+        - fpga
+        - verilog
+        - vhdl
+        - hardware acceleration
+        - hardware engineer intern
+      medium:
+        - digital logic
+        - computer architecture
+        - low latency hardware
+        - rtl
+      categories:
+        - fpga_engineer
+        - hardware_trading_engineer
+    hardware_trading_engineer:
+      strong:
+        - hardware trading
+        - trading hardware
+        - smartnic
+        - network card
+      medium:
+        - fpga
+        - digital logic
+        - latency hardware
+      categories:
+        - hardware_trading_engineer
+    ml_engineer_quant:
+      strong:
+        - machine learning engineer
+        - ml engineer
+        - ai engineer
+      medium:
+        - models
+        - prediction
+        - deep learning
+        - pytorch
+        - tensorflow
+        - feature engineering
+        - trading
+      categories:
+        - ml_engineer_quant
+    data_engineer_quant:
+      strong:
+        - data engineer
+        - data engineering
+        - data platform
+        - data infrastructure
+      medium:
+        - streaming data
+        - pipelines
+        - etl
+        - warehouse
+        - trading data
+      categories:
+        - data_engineer_quant
+    research_engineer_quant:
+      strong:
+        - research engineer
+        - research platform engineer
+        - simulation engineer
+      medium:
+        - backtesting
+        - research platform
+        - models
+        - python
+      categories:
+        - research_engineer_quant
+    quant_trading:
+      strong:
+        - quantitative trading intern
+        - quant trader
+        - trading intern
+        - trader intern
+      medium:
+        - market making
+        - options trading
+        - risk taking
+        - decision making
+      categories:
+        - quant_trading
+    quant_research:
+      strong:
+        - quantitative research intern
+        - quant researcher
+        - research scientist
+        - alpha research
+      medium:
+        - statistics
+        - probability
+        - mathematics
+        - optimization
+        - signals
+      categories:
+        - quant_research
+    finance_analyst:
+      strong:
+        - sales and trading
+        - summer analyst
+        - finance analyst
+        - trading analyst
+      medium:
+        - analyst
+        - capital markets
+        - portfolio
+        - investment
+    trading_operations:
+      strong:
+        - trading operations
+        - trade support
+        - middle office
+        - operations analyst
+      medium:
+        - post-trade
+        - reconciliation
+        - settlement
+        - client onboarding
+    other:
+      strong: []
+      medium: []
+    unknown:
+      strong: []
+      medium: []

@@ -55,9 +55,13 @@ class TestQuantEngineeringPack(unittest.TestCase):
 
         self.assertTrue(role_keywords)
         self.assertTrue(source_queries)
+        self.assertTrue(role_keywords["negative_keywords"])
+        self.assertTrue(role_keywords["role_preferences"])
+        self.assertTrue(role_keywords["role_families"])
 
-        for keywords in role_keywords.values():
-            self.assertTrue(keywords)
+        for keywords in role_keywords["role_families"].values():
+            self.assertIn("strong", keywords)
+            self.assertIn("medium", keywords)
 
         for queries in source_queries.values():
             self.assertTrue(queries)
