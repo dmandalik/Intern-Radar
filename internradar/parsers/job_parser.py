@@ -6,7 +6,6 @@ import hashlib
 import re
 from datetime import UTC, datetime
 from typing import Any
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from internradar.core.config import AppConfig
 from internradar.core.models import (
@@ -21,9 +20,10 @@ from internradar.core.models import (
 from internradar.parsers.location_parser import parse_location
 from internradar.parsers.season_parser import parse_season_and_year
 from internradar.parsers.text_cleaner import clean_text
+from internradar.verification.page_hash import hash_job_content
+from internradar.verification.url_utils import canonicalize_url as verification_canonicalize_url
 
 SAFE_ATS_ID_KEYS = ("id", "job_id", "posting_id", "requisition_id")
-TRACKING_QUERY_KEYS = {"fbclid", "gclid", "utm_campaign", "utm_content", "utm_medium", "utm_source", "utm_term"}
 SLUGIFY_NON_ALNUM_PATTERN = re.compile(r"[^a-z0-9]+")
 
 
@@ -123,33 +123,12 @@ def generate_stable_job_id(
 
 def canonicalize_url(url: str | None) -> str:
     """Normalize a URL for stable identity and later persistence."""
-    if url is None:
-        return ""
-
-    raw = str(url).strip()
-    if not raw:
-        return ""
-
-    parts = urlsplit(raw)
-    scheme = parts.scheme.casefold() or "https"
-    netloc = parts.netloc.casefold()
-    path = re.sub(r"/{2,}", "/", parts.path or "/")
-    if path != "/" and path.endswith("/"):
-        path = path[:-1]
-
-    query_pairs = [
-        (key, value)
-        for key, value in parse_qsl(parts.query, keep_blank_values=True)
-        if key.casefold() not in TRACKING_QUERY_KEYS
-    ]
-    query = urlencode(sorted(query_pairs))
-    return urlunsplit((scheme, netloc, path, query, ""))
+    return verification_canonicalize_url(url)
 
 
 def compute_content_hash(*, title: str, description: str | None, source_url: str) -> str:
     """Compute a stable content hash for a normalized job."""
-    payload = "\n".join([title, description or "", source_url])
-    return hashlib.sha1(payload.encode("utf-8")).hexdigest()[:16]
+    return hash_job_content(title, description, source_url)[:16]
 
 
 def _resolve_company_id(raw_job: RawJob, company: Company | None) -> str:

@@ -6,6 +6,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Optional
 
 import typer
 
@@ -56,18 +57,18 @@ class ScanSummary:
 
 
 def scan(
-    pack: str | None = typer.Option(
+    pack: Optional[str] = typer.Option(
         None,
         "--pack",
         help="Pack name to scan. Defaults to config or quant_engineering.",
     ),
-    max_firms: int | None = typer.Option(
+    max_firms: Optional[int] = typer.Option(
         None,
         "--max-firms",
         min=1,
         help="Limit the number of selected firms after filtering.",
     ),
-    company: str | None = typer.Option(
+    company: Optional[str] = typer.Option(
         None,
         "--company",
         help="Filter companies by name, alias, or ID.",
@@ -82,12 +83,12 @@ def scan(
         "--verbose",
         help="Show detailed collector errors in the summary.",
     ),
-    source: str | None = typer.Option(
+    source: Optional[str] = typer.Option(
         None,
         "--source",
         help="Restrict the scan to a collector source type such as greenhouse.",
     ),
-    project_root: Path | None = typer.Option(
+    project_root: Optional[Path] = typer.Option(
         None,
         "--project-root",
         help="Override the project root when resolving packs.",
