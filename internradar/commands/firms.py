@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Optional
 
 import typer
 
@@ -25,7 +26,7 @@ app = typer.Typer(
 @app.command("list")
 def list_firms(
     pack: str = typer.Option(..., "--pack", help="Pack name to load."),
-    project_root: Path | None = typer.Option(
+    project_root: Optional[Path] = typer.Option(
         None,
         "--project-root",
         help="Override the project root when resolving packs.",
@@ -46,7 +47,7 @@ def list_firms(
 def search(
     query: str = typer.Argument(..., help="Search term for firm ID, name, alias, or category."),
     pack: str = typer.Option(..., "--pack", help="Pack name to load."),
-    project_root: Path | None = typer.Option(
+    project_root: Optional[Path] = typer.Option(
         None,
         "--project-root",
         help="Override the project root when resolving packs.",
@@ -72,7 +73,7 @@ def search(
 @app.command()
 def validate(
     pack: str = typer.Option(..., "--pack", help="Pack name to load."),
-    project_root: Path | None = typer.Option(
+    project_root: Optional[Path] = typer.Option(
         None,
         "--project-root",
         help="Override the project root when resolving packs.",
