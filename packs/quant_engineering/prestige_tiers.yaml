@@ -1,5 +1,5 @@
 prestige_tiers:
-  tier_1:
+  S+:
     - Jane Street
     - Citadel
     - Citadel Securities
@@ -10,7 +10,7 @@ prestige_tiers:
     - IMC Trading
     - Optiver
     - Susquehanna International Group
-  tier_2:
+  S:
     - DRW
     - Tower Research Capital
     - Akuna Capital
@@ -21,7 +21,7 @@ prestige_tiers:
     - Cubist Systematic Strategies
     - G-Research
     - XTX Markets
-  tier_3:
+  A:
     - Maven Securities
     - Old Mission
     - XR Trading
@@ -32,7 +32,7 @@ prestige_tiers:
     - Wolverine Trading
     - PEAK6
     - Virtu Financial
-  tier_4:
+  B:
     - TransMarket Group
     - Teza Technologies
     - Millennium
@@ -43,7 +43,7 @@ prestige_tiers:
     - Schonfeld
     - Balyasny Asset Management
     - ExodusPoint
-  tier_5:
+  C:
     - Marshall Wace
     - AQR Capital Management
     - WorldQuant
@@ -54,3 +54,9 @@ prestige_tiers:
     - RGM Advisors
     - Quantlab
     - Aquatic Capital Management
+tier_aliases:
+  tier_1: S+
+  tier_2: S
+  tier_3: A
+  tier_4: B
+  tier_5: C
