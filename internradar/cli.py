@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import typer
 
+from internradar.commands.export import export as export_command
 from internradar.commands.firms import app as firms_app
 from internradar.commands.scan import scan as scan_command
 from internradar.core.bootstrap import initialize_local_state
@@ -29,18 +30,13 @@ def init() -> None:
 
 
 app.command()(scan_command)
+app.command()(export_command)
 
 
 @app.command()
 def dashboard() -> None:
     """Launch the local dashboard."""
     _placeholder("dashboard")
-
-
-@app.command()
-def export() -> None:
-    """Export collected internship data."""
-    _placeholder("export")
 
 
 @app.command()

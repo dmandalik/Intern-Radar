@@ -3,6 +3,7 @@
 from internradar.core.bootstrap import initialize_local_state
 from internradar.core.config import load_config, resolve_user_config_path
 from internradar.core.database import initialize_database
+from internradar.core.database import load_jobs, load_jobs_by_ids, load_user_actions
 from internradar.core.errors import (
     CollectorError,
     DatabaseError,
@@ -69,7 +70,10 @@ __all__ = [
     "load_pack_firms",
     "load_pack_prestige_tiers",
     "load_pack_role_keywords",
+    "load_jobs",
+    "load_jobs_by_ids",
     "load_config",
+    "load_user_actions",
     "local_app_dir",
     "local_config_path",
     "local_database_path",
