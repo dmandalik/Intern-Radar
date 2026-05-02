@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Intern Radar Report</title>
+  <style>
+    :root {
+      --bg: #090b12;
+      --bg-2: #101521;
+      --card: rgba(20, 26, 39, 0.78);
+      --card-2: rgba(29, 37, 54, 0.82);
+      --text: #edf1fb;
+      --muted: #94a3b8;
+      --accent: #7dd3fc;
+      --accent-2: #f59e0b;
+      --good: #34d399;
+      --warn: #fbbf24;
+      --bad: #fb7185;
+      --line: rgba(148, 163, 184, 0.16);
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(125, 211, 252, 0.16), transparent 28%),
+        radial-gradient(circle at top right, rgba(245, 158, 11, 0.14), transparent 20%),
+        linear-gradient(180deg, #05070d 0%, #090b12 42%, #0c1120 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(148, 163, 184, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+      background-size: 36px 36px;
+      mask-image: radial-gradient(circle at center, rgba(0, 0, 0, 0.9), transparent 88%);
+      pointer-events: none;
+    }
+    .page {
+      width: min(1420px, calc(100vw - 48px));
+      margin: 0 auto;
+      padding: 32px 0 64px;
+      position: relative;
+      z-index: 1;
+    }
+    .hero, .panel, .job-card, .table-card {
+      border: 1px solid var(--line);
+      background: var(--card);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+      border-radius: 24px;
+    }
+    .hero {
+      padding: 34px;
+      margin-bottom: 22px;
+      overflow: hidden;
+      position: relative;
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -80px -100px auto;
+      width: 320px;
+      height: 320px;
+      background: radial-gradient(circle, rgba(125, 211, 252, 0.16), transparent 68%);
+      pointer-events: none;
+    }
+    .kicker {
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-size: 12px;
+      color: var(--accent);
+      font-family: ui-monospace, "SFMono-Regular", monospace;
+      margin-bottom: 14px;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(38px, 5vw, 64px);
+      line-height: 0.94;
+      letter-spacing: -0.04em;
+      max-width: 780px;
+    }
+    .hero-meta, .subcopy {
+      color: var(--muted);
+      max-width: 760px;
+    }
+    .hero-meta {
+      margin-top: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 18px;
+      font-family: ui-monospace, "SFMono-Regular", monospace;
+      font-size: 13px;
+    }
+    .subcopy { margin-top: 18px; font-size: 16px; line-height: 1.6; }
+    .section-title {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 28px 0 14px;
+    }
+    .section-title h2 {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: -0.02em;
+    }
+    .section-title span {
+      color: var(--muted);
+      font-size: 14px;
+      font-family: ui-monospace, "SFMono-Regular", monospace;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+    }
+    .panel {
+      padding: 18px 18px 20px;
+      background: linear-gradient(180deg, rgba(18,24,37,0.9), rgba(15,19,30,0.78));
+    }
+    .panel .label {
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-size: 11px;
+      margin-bottom: 10px;
+      font-family: ui-monospace, "SFMono-Regular", monospace;
+    }
+    .panel .value {
+      font-size: 36px;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .job-card {
+      padding: 20px;
+      background: linear-gradient(180deg, rgba(21, 29, 45, 0.88), rgba(12, 16, 27, 0.86));
+    }
+    .job-card.hidden-gem {
+      border-color: rgba(251, 191, 36, 0.34);
+      box-shadow: 0 24px 90px rgba(245, 158, 11, 0.13);
+    }
+    .job-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    .job-head h3 {
+      margin: 0 0 6px;
+      font-size: 22px;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+    }
+    .company {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    .pill-row, .score-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .pill, .score-pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      background: rgba(255,255,255,0.04);
+    }
+    .pill.status-open, .pill.status-likely_open { color: var(--good); }
+    .pill.status-coming_soon { color: var(--warn); }
+    .pill.status-closed, .pill.status-unknown, .pill.status-requires_login { color: var(--bad); }
+    .score-pill strong { color: var(--accent); }
+    .links {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover { text-decoration: underline; }
+    .mini {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .table-card {
+      padding: 18px;
+      overflow: hidden;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    thead th {
+      text-align: left;
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 12px 10px;
+      font-family: ui-monospace, "SFMono-Regular", monospace;
+    }
+    tbody td {
+      padding: 12px 10px;
+      border-top: 1px solid var(--line);
+      vertical-align: top;
+    }
+    .rank {
+      color: var(--accent-2);
+      font-weight: 700;
+    }
+    .evidence {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+      margin-top: 12px;
+    }
+    @media (max-width: 980px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      .page { width: calc(100vw - 24px); padding-top: 18px; }
+      .hero { padding: 24px; }
+      .table-card { overflow-x: auto; }
+      table { min-width: 860px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <div class="kicker">Intern Radar Report</div>
+      <h1>Personalized internship ranking, polished for real application decisions.</h1>
+      <div class="hero-meta">
+        <span>Generated {{ metadata.generated_at }}</span>
+        <span>Pack {{ metadata.pack or "unknown" }}</span>
+        <span>{{ records|length }} jobs</span>
+      </div>
+      <p class="subcopy">
+        {{ metadata.summary.open }} open roles, {{ metadata.summary.hidden_gems }} hidden-gem candidates,
+        and {{ metadata.summary.coming_soon }} coming-soon roles worth watching.
+      </p>
+    </section>
+
+    <section class="stats">
+      <div class="panel"><div class="label">Open</div><div class="value">{{ metadata.summary.open }}</div></div>
+      <div class="panel"><div class="label">Likely Open</div><div class="value">{{ metadata.summary.likely_open }}</div></div>
+      <div class="panel"><div class="label">Hidden Gems</div><div class="value">{{ metadata.summary.hidden_gems }}</div></div>
+      <div class="panel"><div class="label">Coming Soon</div><div class="value">{{ metadata.summary.coming_soon }}</div></div>
+      <div class="panel"><div class="label">Saved</div><div class="value">{{ metadata.summary.saved }}</div></div>
+      <div class="panel"><div class="label">Applied</div><div class="value">{{ metadata.summary.applied }}</div></div>
+      <div class="panel"><div class="label">Review Needed</div><div class="value">{{ metadata.summary.review_needed }}</div></div>
+    </section>
+
+    <div class="section-title"><h2>Top Apply-Now Jobs</h2><span>Ranked by opportunity score</span></div>
+    <section class="grid-2">
+      {% for record in top_open %}
+      <article class="job-card">
+        <div class="job-head">
+          <div>
+            <div class="company">#{{ record.rank }} · {{ record.company }}</div>
+            <h3>{{ record.title }}</h3>
+          </div>
+          <div class="score-pill"><strong>{{ "%.0f"|format(record.job.scores.opportunity_score) }}</strong> Opp.</div>
+        </div>
+        <div class="pill-row">
+          <span class="pill status-{{ record.status }}">{{ record.status.replace("_", " ") }}</span>
+          <span class="pill">{{ record.role_family }}</span>
+          <span class="pill">{{ record.job.prestige_tier or "Unknown prestige" }}</span>
+          <span class="pill">{{ record.location or "Location TBD" }}</span>
+        </div>
+        <div class="score-row">
+          {% for label, score in record.score_pills[:4] %}
+          <span class="score-pill">{{ label }} <strong>{{ "%.0f"|format(score) }}</strong></span>
+          {% endfor %}
+        </div>
+        <div class="mini">{{ record.why_ranked }}</div>
+        <div class="links">
+          <a href="{{ record.job.apply_url }}">Apply</a>
+          <a href="{{ record.job.source_url }}">Source</a>
+        </div>
+      </article>
+      {% endfor %}
+    </section>
+
+    <div class="section-title"><h2>Hidden Gems</h2><span>Credible, technical, less obvious</span></div>
+    <section class="grid-2">
+      {% for record in hidden_gems %}
+      <article class="job-card hidden-gem">
+        <div class="job-head">
+          <div>
+            <div class="company">{{ record.company }}</div>
+            <h3>{{ record.title }}</h3>
+          </div>
+          <div class="score-pill"><strong>{{ "%.0f"|format(record.job.scores.hidden_gem_score) }}</strong> Hidden Gem</div>
+        </div>
+        <div class="pill-row">
+          <span class="pill">{{ record.role_family }}</span>
+          <span class="pill">{{ record.job.prestige_tier or "Unknown prestige" }}</span>
+          <span class="pill status-{{ record.status }}">{{ record.status.replace("_", " ") }}</span>
+        </div>
+        <div class="mini">{{ record.job.scores.explanation[:3]|join(" | ") }}</div>
+        <div class="links">
+          <a href="{{ record.job.apply_url }}">Apply</a>
+          <a href="{{ record.job.source_url }}">Source</a>
+        </div>
+      </article>
+      {% endfor %}
+    </section>
+
+    <div class="section-title"><h2>Best CS/Algo Fits</h2><span>High role fit and technical depth</span></div>
+    <section class="grid-2">
+      {% for record in best_fits %}
+      <article class="job-card">
+        <div class="company">{{ record.company }}</div>
+        <h3>{{ record.title }}</h3>
+        <div class="score-row">
+          <span class="score-pill">Role Fit <strong>{{ "%.0f"|format(record.job.scores.role_fit_score) }}</strong></span>
+          <span class="score-pill">Technical <strong>{{ "%.0f"|format(record.job.scores.technical_depth_score) }}</strong></span>
+          <span class="score-pill">Eligibility <strong>{{ "%.0f"|format(record.job.scores.eligibility_score) }}</strong></span>
+        </div>
+        <div class="mini">{{ record.why_ranked }}</div>
+      </article>
+      {% endfor %}
+    </section>
+
+    <div class="section-title"><h2>Coming Soon Watchlist</h2><span>Worth revisiting later</span></div>
+    <section class="grid-2">
+      {% for record in coming_soon %}
+      <article class="job-card">
+        <div class="company">{{ record.company }}</div>
+        <h3>{{ record.title }}</h3>
+        <div class="pill-row">
+          <span class="pill status-coming_soon">coming soon</span>
+          <span class="pill">{{ record.location or "Location TBD" }}</span>
+        </div>
+        <div class="evidence">{{ record.job.status.evidence[:3]|join(" | ") }}</div>
+      </article>
+      {% endfor %}
+    </section>
+
+    <div class="section-title"><h2>Review Needed</h2><span>Low-confidence or incomplete items</span></div>
+    <section class="grid-2">
+      {% for record in review_needed %}
+      <article class="job-card">
+        <div class="company">{{ record.company }}</div>
+        <h3>{{ record.title }}</h3>
+        <div class="pill-row">
+          <span class="pill status-{{ record.status }}">{{ record.status.replace("_", " ") }}</span>
+          <span class="pill">{{ record.role_family }}</span>
+        </div>
+        <div class="evidence">{{ record.job.status.evidence[:2]|join(" | ") }}</div>
+      </article>
+      {% endfor %}
+    </section>
+
+    <div class="section-title"><h2>Full Jobs Table</h2><span>Readable static table with direct links</span></div>
+    <section class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Company</th>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Role</th>
+            <th>Opportunity</th>
+            <th>Hidden Gem</th>
+            <th>Eligibility</th>
+            <th>Links</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for record in records %}
+          <tr>
+            <td class="rank">{{ record.rank }}</td>
+            <td>{{ record.company }}</td>
+            <td>
+              <strong>{{ record.title }}</strong>
+              <div class="evidence">{{ record.why_ranked }}</div>
+            </td>
+            <td><span class="pill status-{{ record.status }}">{{ record.status.replace("_", " ") }}</span></td>
+            <td>{{ record.role_family }}</td>
+            <td>{{ "%.0f"|format(record.job.scores.opportunity_score) }}</td>
+            <td>{{ "%.0f"|format(record.job.scores.hidden_gem_score) }}</td>
+            <td>{{ record.eligibility_summary or "Unknown" }}</td>
+            <td><a href="{{ record.job.apply_url }}">Apply</a> · <a href="{{ record.job.source_url }}">Source</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  </div>
+</body>
+</html>

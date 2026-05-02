@@ -1,0 +1,46 @@
+# Intern Radar Report
+
+Generated: {{ metadata.generated_at }}
+Pack: {{ metadata.pack or "unknown" }}
+Count: {{ records|length }}
+
+## Summary
+
+- Open: {{ metadata.summary.open }}
+- Likely Open: {{ metadata.summary.likely_open }}
+- Hidden Gems: {{ metadata.summary.hidden_gems }}
+- Coming Soon: {{ metadata.summary.coming_soon }}
+- Saved: {{ metadata.summary.saved }}
+- Applied: {{ metadata.summary.applied }}
+
+## Top Open Jobs
+
+| Rank | Company | Title | Status | Opportunity | Apply |
+| --- | --- | --- | --- | ---: | --- |
+{% for record in top_open %}
+| {{ record.rank }} | {{ record.company }} | {{ record.title }} | {{ record.status }} | {{ "%.1f"|format(record.job.scores.opportunity_score) }} | [Apply]({{ record.job.apply_url }}) |
+{% endfor %}
+
+## Hidden Gems
+
+| Rank | Company | Title | Hidden Gem | Why |
+| --- | --- | --- | ---: | --- |
+{% for record in hidden_gems %}
+| {{ record.rank }} | {{ record.company }} | {{ record.title }} | {{ "%.1f"|format(record.job.scores.hidden_gem_score) }} | {{ record.why_ranked }} |
+{% endfor %}
+
+## Coming Soon
+
+| Company | Title | Status | Evidence |
+| --- | --- | --- | --- |
+{% for record in coming_soon %}
+| {{ record.company }} | {{ record.title }} | {{ record.status }} | {{ record.job.status.evidence[:2]|join(" | ") }} |
+{% endfor %}
+
+## All Jobs
+
+| Rank | Company | Title | Role | Status | Opp. | Hidden Gem | Apply |
+| --- | --- | --- | --- | --- | ---: | ---: | --- |
+{% for record in all_jobs %}
+| {{ record.rank }} | {{ record.company }} | {{ record.title }} | {{ record.role_family }} | {{ record.status }} | {{ "%.1f"|format(record.job.scores.opportunity_score) }} | {{ "%.1f"|format(record.job.scores.hidden_gem_score) }} | [Apply]({{ record.job.apply_url }}) |
+{% endfor %}

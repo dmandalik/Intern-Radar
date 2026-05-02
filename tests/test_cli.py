@@ -8,7 +8,7 @@ from typer.testing import CliRunner
 
 from internradar.cli import app
 
-PLACEHOLDER_COMMAND_NAMES = ("dashboard", "export", "review", "config")
+PLACEHOLDER_COMMAND_NAMES = ("dashboard", "review", "config")
 
 
 class TestCli(unittest.TestCase):
@@ -19,7 +19,7 @@ class TestCli(unittest.TestCase):
         result = self.runner.invoke(app, ["--help"])
 
         self.assertEqual(result.exit_code, 0)
-        for command in ("init", "firms", *PLACEHOLDER_COMMAND_NAMES):
+        for command in ("init", "firms", "export", *PLACEHOLDER_COMMAND_NAMES):
             self.assertIn(command, result.stdout)
 
     def test_placeholder_commands_run(self) -> None:

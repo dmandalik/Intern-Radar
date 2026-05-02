@@ -251,6 +251,62 @@ def load_jobs_by_ids(
         connection.close()
 
 
+def load_jobs(
+    *,
+    cwd: Path | None = None,
+) -> list[Job]:
+    """Load all normalized jobs from the local database."""
+    connection = _connect_existing_database(cwd)
+    try:
+        rows = list(connection.execute("SELECT * FROM jobs ORDER BY company_name, title"))
+        return [_job_from_row(row) for row in rows]
+    finally:
+        connection.close()
+
+
+def load_user_actions(
+    *,
+    cwd: Path | None = None,
+) -> dict[str, dict[str, str]]:
+    """Load latest user action state keyed by job ID."""
+    connection = _connect_existing_database(cwd)
+    try:
+        rows = list(
+            connection.execute(
+                """
+                SELECT job_id, action_type, action_value, notes, created_at
+                FROM user_actions
+                ORDER BY created_at ASC, id ASC
+                """,
+            ),
+        )
+    finally:
+        connection.close()
+
+    actions_by_job: dict[str, dict[str, str]] = {}
+    for row in rows:
+        job_id = str(row["job_id"])
+        action_type = _normalize_optional_str(row["action_type"])
+        action_value = _normalize_optional_str(row["action_value"])
+        notes = _normalize_optional_str(row["notes"])
+        created_at = _normalize_optional_str(row["created_at"])
+
+        state = actions_by_job.setdefault(job_id, {})
+        if action_type == "saved":
+            state["saved"] = action_value or "true"
+            state["application_status"] = "saved"
+        elif action_type == "applied":
+            state["applied"] = action_value or "true"
+            state["application_status"] = "applied"
+        elif action_type is not None:
+            state[action_type] = action_value or "true"
+        if notes is not None:
+            state["notes"] = notes
+        if created_at is not None:
+            state["updated_at"] = created_at
+    return actions_by_job
+
+
 def upsert_jobs(
     jobs: list[Job],
     *,
@@ -679,7 +735,9 @@ __all__ = [
     "create_scan_run",
     "database_exists",
     "initialize_database",
+    "load_jobs",
     "load_jobs_by_ids",
+    "load_user_actions",
     "record_scan_run",
     "upsert_jobs",
 ]
