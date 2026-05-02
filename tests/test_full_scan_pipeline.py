@@ -145,7 +145,7 @@ class TestFullScanPipeline(unittest.TestCase):
             with sqlite3.connect(database_path) as connection:
                 jobs = connection.execute(
                     """
-                    SELECT id, company_id, role_family, status, locations_json, eligibility_json, raw_json
+                    SELECT id, company_id, role_family, status, locations_json, eligibility_json, raw_json, scores_json
                     FROM jobs ORDER BY company_id
                     """,
                 ).fetchall()
@@ -163,6 +163,7 @@ class TestFullScanPipeline(unittest.TestCase):
             self.assertEqual(json.loads(first_job[4]), ["New York, NY"])
             self.assertIn("computer science", json.loads(first_job[5])["majors"])
             self.assertEqual(json.loads(first_job[6])["merged_records"], 2)
+            self.assertGreater(json.loads(first_job[7])["opportunity_score"], 0.0)
             self.assertEqual(second_job[2], "infrastructure_engineer")
             self.assertEqual(snapshots, 2)
 

@@ -32,6 +32,7 @@ from internradar.core.paths import local_database_path
 from internradar.parsers.eligibility_parser import apply_job_eligibility
 from internradar.parsers.job_parser import normalize_raw_job
 from internradar.parsers.role_classifier import classify_role
+from internradar.scoring.opportunity_score import score_job
 from internradar.verification.duplicate_detector import deduplicate_jobs, find_duplicates
 from internradar.verification.status_checker import check_job_status
 
@@ -241,6 +242,7 @@ def run_scan(
     deduped_jobs, raw_records_by_id = _deduplicate_records(normalized_records)
     summary.deduplicated_jobs = len(deduped_jobs)
     summary.duplicates_merged = max(0, summary.normalized_jobs - summary.deduplicated_jobs)
+    company_by_id = {firm.id: firm for firm in firms}
     summary.status_counts = _sorted_counter(
         (job.status.status for job in deduped_jobs),
         preferred_order=STATUS_ORDER,
@@ -250,9 +252,23 @@ def run_scan(
         sort_by_count=True,
     )
 
+    existing_jobs: dict[str, Job] = {}
     if summary.scan_run_id is not None:
         existing_jobs = load_jobs_by_ids([job.id for job in deduped_jobs])
-        deduped_jobs = _reconcile_existing_jobs(deduped_jobs, existing_jobs)
+
+    deduped_jobs = _reconcile_existing_jobs(deduped_jobs, existing_jobs)
+    deduped_jobs = [
+        score_job(
+            job,
+            company=company_by_id.get(job.company_id),
+            config=config,
+            pack_name=pack_name,
+            root=project_root,
+        )
+        for job in deduped_jobs
+    ]
+
+    if summary.scan_run_id is not None:
         write_summary = upsert_jobs(
             deduped_jobs,
             raw_records_by_id=raw_records_by_id,

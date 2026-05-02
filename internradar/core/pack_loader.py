@@ -91,6 +91,19 @@ def load_pack_role_keywords(pack_name: str, root: Path | None = None) -> dict[st
     return payload
 
 
+def load_pack_prestige_tiers(pack_name: str, root: Path | None = None) -> dict[str, Any]:
+    """Load prestige tier configuration for a pack."""
+    pack = load_pack(pack_name, root=root)
+    tiers_path = pack.path / "prestige_tiers.yaml"
+    payload = _read_pack_mapping(tiers_path, expected_key="prestige_tiers")
+    prestige_tiers = payload.get("prestige_tiers")
+    if not isinstance(prestige_tiers, Mapping):
+        raise PackLoaderError(
+            f"{tiers_path} must contain a top-level 'prestige_tiers' mapping.",
+        )
+    return payload
+
+
 def validate_pack_firms(pack_name: str, root: Path | None = None) -> FirmValidationReport:
     """Load and validate firm records for a pack."""
     pack = load_pack(pack_name, root=root)
