@@ -5,6 +5,7 @@ from __future__ import annotations
 import typer
 
 from internradar.commands.dashboard import dashboard as dashboard_command
+from internradar.commands.discover import app as discover_app
 from internradar.commands.export import export as export_command
 from internradar.commands.firms import app as firms_app
 from internradar.commands.review import review as review_command
@@ -44,6 +45,7 @@ def config() -> None:
 
 app.command()(review_command)
 app.add_typer(firms_app, name="firms")
+app.add_typer(discover_app, name="discover")
 
 
 def main() -> None:

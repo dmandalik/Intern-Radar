@@ -20,7 +20,7 @@ class TestCli(unittest.TestCase):
         result = self.runner.invoke(app, ["--help"])
 
         self.assertEqual(result.exit_code, 0)
-        for command in ("init", "firms", "export", "dashboard", *PLACEHOLDER_COMMAND_NAMES):
+        for command in ("init", "firms", "export", "dashboard", "discover", *PLACEHOLDER_COMMAND_NAMES):
             self.assertIn(command, result.stdout)
 
     def test_placeholder_commands_run(self) -> None:
