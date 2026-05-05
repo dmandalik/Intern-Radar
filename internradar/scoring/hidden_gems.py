@@ -15,9 +15,16 @@ def score_hidden_gem(
     technical_depth_score: float,
     freshness_score: float,
     eligibility_score: float,
+    source_visibility_count: int = 1,
+    appears_in_github_list: bool = False,
 ) -> tuple[float, list[str]]:
     """Score whether a role looks like a credible hidden gem."""
-    low_visibility_score, low_visibility_evidence = _low_visibility(job, prestige_score)
+    low_visibility_score, low_visibility_evidence = _low_visibility(
+        job,
+        prestige_score,
+        source_visibility_count=source_visibility_count,
+        appears_in_github_list=appears_in_github_list,
+    )
     technical_relevance_score = round((technical_depth_score * 0.6) + (role_fit_score * 0.4), 2)
     firm_quality_score = _firm_quality(prestige_score)
 
@@ -51,7 +58,41 @@ def score_hidden_gem(
     return round(max(0.0, min(100.0, raw_score)), 2), evidence[:8]
 
 
-def _low_visibility(job: Job, prestige_score: float) -> tuple[float, list[str]]:
+def visibility_signal(
+    *,
+    source_type: str,
+    source_visibility_count: int = 1,
+    appears_in_github_list: bool = False,
+) -> tuple[float, list[str]]:
+    """Return a visibility adjustment based on source breadth and public-list presence."""
+    adjustment = 0.0
+    evidence: list[str] = []
+
+    if source_type == "custom_page":
+        adjustment += 10.0
+        evidence.append("Custom career page sourcing suggests lower visibility.")
+    elif source_type == "github_list" or appears_in_github_list:
+        adjustment -= 12.0
+        evidence.append("Public GitHub internship list presence makes the role more visible.")
+    elif source_type not in {"greenhouse", "lever"}:
+        adjustment += 5.0
+        evidence.append(f"Source type '{source_type}' is less obvious than major ATS feeds.")
+
+    if source_visibility_count > 1:
+        penalty = min(15.0, float(source_visibility_count - 1) * 4.0)
+        adjustment -= penalty
+        evidence.append(f"Appearing in {source_visibility_count} discovery sources makes the role easier to find.")
+
+    return adjustment, evidence
+
+
+def _low_visibility(
+    job: Job,
+    prestige_score: float,
+    *,
+    source_visibility_count: int,
+    appears_in_github_list: bool,
+) -> tuple[float, list[str]]:
     if prestige_score >= 95.0:
         score = 20.0
         evidence = ["S+ prestige makes the role highly visible rather than hidden."]
@@ -71,12 +112,13 @@ def _low_visibility(job: Job, prestige_score: float) -> tuple[float, list[str]]:
         score = 75.0
         evidence = ["Unknown prestige keeps visibility moderate until more evidence is available."]
 
-    if job.source_type == "custom_page":
-        score = min(100.0, score + 10.0)
-        evidence.append("Custom career page sourcing suggests lower visibility.")
-    elif job.source_type not in {"greenhouse", "lever"}:
-        score = min(100.0, score + 5.0)
-        evidence.append(f"Source type '{job.source_type}' is less obvious than major ATS feeds.")
+    adjustment, visibility_evidence = visibility_signal(
+        source_type=job.source_type,
+        source_visibility_count=source_visibility_count,
+        appears_in_github_list=appears_in_github_list,
+    )
+    score = max(0.0, min(100.0, score + adjustment))
+    evidence.extend(visibility_evidence)
 
     return score, evidence
 
@@ -95,4 +137,4 @@ def _firm_quality(prestige_score: float) -> float:
     return 55.0
 
 
-__all__ = ["score_hidden_gem"]
+__all__ = ["score_hidden_gem", "visibility_signal"]

@@ -1,21 +1,72 @@
 source_queries:
-  internship:
-    - quant engineering internship
-    - quant software engineer internship
-    - trading systems internship
-    - electronic trading internship
-    - low latency internship
-    - market data engineer internship
-    - FPGA internship trading
-  new_grad:
-    - quant software engineer new grad
-    - quantitative developer new grad
-    - trading infrastructure new grad
-    - systems engineer trading new grad
-    - quantitative research new grad
-  focus_areas:
-    - C++ trading intern
-    - Python quant intern
-    - FPGA trading intern
-    - machine learning quant intern
-    - exchange connectivity intern
+  role_terms:
+    - Software Engineer Intern
+    - Software Engineering Intern
+    - Trading Systems Intern
+    - Quant Developer Intern
+    - Quantitative Developer Intern
+    - Algorithm Developer Intern
+    - Low Latency Software Engineer Intern
+    - Market Data Engineer Intern
+    - Infrastructure Engineer Intern
+    - FPGA Engineer Intern
+    - Research Engineer Intern
+    - Machine Learning Engineer Intern Trading
+    - C++ Trading Intern
+    - Trading Infrastructure Intern
+    - Backend Engineer Intern Trading
+    - Systems Engineer Intern Trading
+  season_terms:
+    - Summer 2027
+    - Summer 2026
+    - Winter 2027
+    - Fall 2026
+    - Spring 2027
+    - May 2027
+    - June 2027
+    - 2027 Internship
+  domain_terms:
+    greenhouse: site:greenhouse.io
+    lever: site:lever.co
+    ashby: site:ashbyhq.com
+    icims: site:icims.com
+    workday: site:workdayjobs.com
+    smartrecruiters: site:smartrecruiters.com
+    jobvite: site:jobvite.com
+  hidden_gem_terms:
+    - proprietary trading
+    - market maker
+    - systematic trading
+    - quantitative trading
+    - low latency
+    - market data
+    - trading infrastructure
+    - exchange connectivity
+    - options trading
+    - algorithmic trading
+    - trading systems
+    - trading
+    - C++
+  location_terms:
+    - New York
+    - New York, NY
+    - Chicago
+    - Chicago, IL
+    - London
+    - Austin
+    - Boston
+    - Amsterdam
+    - Singapore
+    - Remote
+  query_templates:
+    default:
+      - '"{season}" "{role}"'
+      - '"{season}" "C++" "trading systems" "intern"'
+      - '"{season}" "{role}" "{hidden_gem_term}"'
+      - '"{season}" "{location_term}" "{role}"'
+      - '"{year}" "{role}"'
+      - '{domain_term} "{season}" "{role}"'
+      - '{domain_term} "{season}" "{role}" "{hidden_gem_term}"'
+    exhaustive:
+      - '"{season}" "{role}" "{location_term}" "{hidden_gem_term}"'
+      - '"{year}" "{hidden_gem_term}" "{role}"'

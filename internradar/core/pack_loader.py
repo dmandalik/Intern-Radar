@@ -104,6 +104,19 @@ def load_pack_prestige_tiers(pack_name: str, root: Path | None = None) -> dict[s
     return payload
 
 
+def load_pack_source_queries(pack_name: str, root: Path | None = None) -> dict[str, Any]:
+    """Load manual discovery query configuration for a pack."""
+    pack = load_pack(pack_name, root=root)
+    queries_path = pack.path / "source_queries.yaml"
+    payload = _read_pack_mapping(queries_path, expected_key="source_queries")
+    source_queries = payload.get("source_queries")
+    if not isinstance(source_queries, Mapping):
+        raise PackLoaderError(
+            f"{queries_path} must contain a top-level 'source_queries' mapping.",
+        )
+    return payload
+
+
 def validate_pack_firms(pack_name: str, root: Path | None = None) -> FirmValidationReport:
     """Load and validate firm records for a pack."""
     pack = load_pack(pack_name, root=root)
