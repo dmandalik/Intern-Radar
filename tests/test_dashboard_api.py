@@ -145,6 +145,16 @@ class TestDashboardApi(unittest.TestCase):
         actions = load_user_actions(cwd=self.cwd)
         self.assertEqual(actions["job-open"]["application_status"], "oa_received")
 
+    def test_action_endpoint_can_mark_reviewed(self) -> None:
+        client = self._seeded_client()
+
+        response = client.post("/api/jobs/job-open/action", json={"action": "mark_reviewed"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["job"]["reviewed"], True)
+        actions = load_user_actions(cwd=self.cwd)
+        self.assertEqual(actions["job-open"]["reviewed"], "true")
+
     def test_notes_endpoint_persists_notes(self) -> None:
         client = self._seeded_client()
 

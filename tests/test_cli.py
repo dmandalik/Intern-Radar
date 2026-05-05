@@ -7,8 +7,9 @@ from pathlib import Path
 from typer.testing import CliRunner
 
 from internradar.cli import app
+from internradar.core.database import initialize_database
 
-PLACEHOLDER_COMMAND_NAMES = ("review", "config")
+PLACEHOLDER_COMMAND_NAMES = ("config",)
 
 
 class TestCli(unittest.TestCase):
@@ -32,6 +33,14 @@ class TestCli(unittest.TestCase):
                     f"`{command_name}` is not implemented yet.",
                     result.stdout,
                 )
+
+    def test_review_command_runs_with_empty_queue(self) -> None:
+        with self.runner.isolated_filesystem():
+            initialize_database()
+            result = self.runner.invoke(app, ["review"])
+
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn("No jobs currently need review.", result.stdout)
 
     def test_init_creates_local_config_and_database(self) -> None:
         with self.runner.isolated_filesystem():

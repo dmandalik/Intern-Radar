@@ -131,17 +131,17 @@ class TestExportCommand(unittest.TestCase):
         with sqlite3.connect(database_path) as connection:
             connection.execute(
                 """
-                INSERT INTO user_actions (job_id, action_type, action_value, notes, created_at)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO user_actions (job_id, action_type, action_value, notes, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """,
-                ("job-open", "saved", "true", "Watch this one", "2026-05-02T12:00:00+00:00"),
+                ("job-open", "saved", "true", "Watch this one", "2026-05-02T12:00:00+00:00", "2026-05-02T12:00:00+00:00"),
             )
             connection.execute(
                 """
-                INSERT INTO user_actions (job_id, action_type, action_value, notes, created_at)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO user_actions (job_id, action_type, action_value, notes, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """,
-                ("job-closed", "applied", "true", "Already applied", "2026-05-02T12:05:00+00:00"),
+                ("job-closed", "applied", "true", "Already applied", "2026-05-02T12:05:00+00:00", "2026-05-02T12:05:00+00:00"),
             )
             connection.commit()
 

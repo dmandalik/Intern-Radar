@@ -54,3 +54,8 @@ def local_exports_dir(cwd: Path | None = None) -> Path:
 def local_overrides_path(cwd: Path | None = None) -> Path:
     """Return the workspace-local manual overrides file path."""
     return local_app_dir(cwd) / OVERRIDES_FILE_NAME
+
+
+def home_overrides_path(home: Path | None = None) -> Path:
+    """Return the user-level manual overrides file path."""
+    return home_app_dir(home) / OVERRIDES_FILE_NAME
