@@ -3,7 +3,14 @@
 from internradar.core.bootstrap import initialize_local_state
 from internradar.core.config import load_config, resolve_user_config_path
 from internradar.core.database import initialize_database
-from internradar.core.database import load_jobs, load_jobs_by_ids, load_user_actions
+from internradar.core.database import (
+    load_job_raw_payload,
+    load_jobs,
+    load_jobs_by_ids,
+    load_latest_scan_run,
+    load_user_actions,
+    record_user_action,
+)
 from internradar.core.errors import (
     CollectorError,
     DatabaseError,
@@ -66,12 +73,14 @@ __all__ = [
     "Job",
     "JobScores",
     "JobStatusInfo",
+    "load_job_raw_payload",
     "load_pack",
     "load_pack_firms",
     "load_pack_prestige_tiers",
     "load_pack_role_keywords",
     "load_jobs",
     "load_jobs_by_ids",
+    "load_latest_scan_run",
     "load_config",
     "load_user_actions",
     "local_app_dir",
@@ -86,6 +95,7 @@ __all__ = [
     "ParseError",
     "RateLimitedError",
     "RawJob",
+    "record_user_action",
     "resolve_user_config_path",
     "search_firms",
     "UnsupportedATSError",

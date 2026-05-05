@@ -123,6 +123,7 @@ def run_export(
     sort_key: str,
     pack: str | None,
     include_closed: bool,
+    cwd: Path | None = None,
 ) -> list[Path]:
     """Run export pipeline and return created files."""
     if not all_formats and format_name is None:
@@ -131,14 +132,14 @@ def run_export(
     if all_formats and format_name is not None:
         raise ExportCommandError("Use either --format or --all, not both.")
 
-    if not database_exists():
+    if not database_exists(cwd):
         raise ExportCommandError("No local database found. Run `internradar init` and `internradar scan` first.")
 
-    jobs = load_jobs()
+    jobs = load_jobs(cwd=cwd)
     if not jobs:
         raise ExportCommandError("No jobs found in the local database. Run `internradar scan` first.")
 
-    user_actions = load_user_actions()
+    user_actions = load_user_actions(cwd=cwd)
     records = _build_records(jobs, user_actions)
     filtered_records = _filter_records(
         records,
@@ -163,7 +164,7 @@ def run_export(
         for index, record in enumerate(sorted_records, start=1)
     ]
 
-    config = load_config()
+    config = load_config(cwd=cwd)
     metadata = _build_metadata(
         ranked_records,
         filters={
@@ -180,7 +181,7 @@ def run_export(
     )
     target_formats = _resolve_target_formats(format_name=format_name, all_formats=all_formats)
     timestamp = datetime.now(UTC).strftime("%Y-%m-%d_%H-%M-%S")
-    output_dir = _resolve_output_dir(output=output, all_formats=all_formats)
+    output_dir = _resolve_output_dir(output=output, all_formats=all_formats, cwd=cwd)
 
     created_paths: list[Path] = []
     for target_format in target_formats:
@@ -327,11 +328,11 @@ def _resolve_target_formats(*, format_name: str | None, all_formats: bool) -> li
     raise ExportCommandError(f"Unsupported export format '{format_name}'.")
 
 
-def _resolve_output_dir(*, output: Path | None, all_formats: bool) -> Path:
+def _resolve_output_dir(*, output: Path | None, all_formats: bool, cwd: Path | None) -> Path:
     if output is not None and all_formats:
         return output if output.suffix == "" else output.parent
     if output is None:
-        base_dir = local_exports_dir()
+        base_dir = local_exports_dir(cwd)
         base_dir.mkdir(parents=True, exist_ok=True)
         return base_dir
     return output.parent
