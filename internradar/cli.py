@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import typer
 
+from internradar.commands.dashboard import dashboard as dashboard_command
 from internradar.commands.export import export as export_command
 from internradar.commands.firms import app as firms_app
 from internradar.commands.scan import scan as scan_command
@@ -31,12 +32,7 @@ def init() -> None:
 
 app.command()(scan_command)
 app.command()(export_command)
-
-
-@app.command()
-def dashboard() -> None:
-    """Launch the local dashboard."""
-    _placeholder("dashboard")
+app.command()(dashboard_command)
 
 
 @app.command()

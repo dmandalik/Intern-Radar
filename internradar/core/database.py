@@ -298,6 +298,15 @@ def load_user_actions(
         elif action_type == "applied":
             state["applied"] = action_value or "true"
             state["application_status"] = "applied"
+        elif action_type == "application_status":
+            if action_value is not None:
+                state["application_status"] = action_value
+                if action_value in {"saved", "applied", "oa_received", "interviewing", "offer"}:
+                    state["saved"] = "true"
+                if action_value in {"applied", "oa_received", "interviewing", "offer"}:
+                    state["applied"] = "true"
+        elif action_type == "notes":
+            state["notes"] = action_value or notes or ""
         elif action_type is not None:
             state[action_type] = action_value or "true"
         if notes is not None:
@@ -305,6 +314,90 @@ def load_user_actions(
         if created_at is not None:
             state["updated_at"] = created_at
     return actions_by_job
+
+
+def record_user_action(
+    job_id: str,
+    *,
+    action_type: str,
+    action_value: str | None = None,
+    notes: str | None = None,
+    created_at: datetime | None = None,
+    cwd: Path | None = None,
+) -> None:
+    """Persist a user action row for a job."""
+    connection = _connect_existing_database(cwd)
+    try:
+        connection.execute(
+            """
+            INSERT INTO user_actions (job_id, action_type, action_value, notes, created_at)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                job_id,
+                action_type,
+                action_value,
+                notes,
+                _isoformat(created_at or datetime.now(UTC)),
+            ),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+
+def load_latest_scan_run(
+    *,
+    cwd: Path | None = None,
+) -> dict[str, Any] | None:
+    """Load the most recent scan run summary from the local database."""
+    connection = _connect_existing_database(cwd)
+    try:
+        row = connection.execute(
+            """
+            SELECT id, started_at, completed_at, status, trigger, notes, pack, summary_json
+            FROM scan_runs
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+        ).fetchone()
+    finally:
+        connection.close()
+
+    if row is None:
+        return None
+
+    summary = _parse_json_mapping(row["summary_json"])
+    return {
+        "id": int(row["id"]),
+        "started_at": row["started_at"],
+        "completed_at": row["completed_at"],
+        "status": row["status"],
+        "trigger": row["trigger"],
+        "notes": _parse_json_mapping(row["notes"]),
+        "pack": row["pack"],
+        "summary": summary,
+    }
+
+
+def load_job_raw_payload(
+    job_id: str,
+    *,
+    cwd: Path | None = None,
+) -> dict[str, Any] | None:
+    """Load the stored raw payload for a normalized job when available."""
+    connection = _connect_existing_database(cwd)
+    try:
+        row = connection.execute(
+            "SELECT raw_json FROM jobs WHERE id = ?",
+            (job_id,),
+        ).fetchone()
+    finally:
+        connection.close()
+
+    if row is None:
+        return None
+    return _parse_json_mapping(row["raw_json"]) or None
 
 
 def upsert_jobs(
@@ -735,9 +828,12 @@ __all__ = [
     "create_scan_run",
     "database_exists",
     "initialize_database",
+    "load_job_raw_payload",
     "load_jobs",
     "load_jobs_by_ids",
+    "load_latest_scan_run",
     "load_user_actions",
+    "record_user_action",
     "record_scan_run",
     "upsert_jobs",
 ]

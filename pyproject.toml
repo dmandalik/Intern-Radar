@@ -14,12 +14,14 @@ authors = [
 ]
 dependencies = [
   "beautifulsoup4>=4.12,<5",
+  "fastapi>=0.115,<1",
   "httpx>=0.27,<0.29",
   "Jinja2>=3.1,<4",
   "openpyxl>=3.1,<4",
   "PyYAML>=6,<7",
   "pydantic>=2,<3",
   "typer>=0.12,<1.0",
+  "uvicorn>=0.30,<1",
 ]
 
 [project.optional-dependencies]
@@ -41,3 +43,13 @@ include = ["internradar*"]
 
 [tool.setuptools.package-data]
 "internradar.export" = ["templates/*.j2"]
+"internradar.dashboard" = [
+  "frontend/index.html",
+  "frontend/package.json",
+  "frontend/tsconfig.json",
+  "frontend/vite.config.ts",
+  "frontend/dist/*",
+  "frontend/dist/assets/*",
+  "frontend/src/**/*",
+  "frontend/styles/*"
+]
