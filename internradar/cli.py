@@ -7,6 +7,7 @@ import typer
 from internradar.commands.dashboard import dashboard as dashboard_command
 from internradar.commands.export import export as export_command
 from internradar.commands.firms import app as firms_app
+from internradar.commands.review import review as review_command
 from internradar.commands.scan import scan as scan_command
 from internradar.core.bootstrap import initialize_local_state
 
@@ -36,17 +37,12 @@ app.command()(dashboard_command)
 
 
 @app.command()
-def review() -> None:
-    """Review internships and manual decisions."""
-    _placeholder("review")
-
-
-@app.command()
 def config() -> None:
     """Inspect or update local configuration."""
     _placeholder("config")
 
 
+app.command()(review_command)
 app.add_typer(firms_app, name="firms")
 
 

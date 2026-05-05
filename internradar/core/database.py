@@ -77,6 +77,7 @@ USER_ACTIONS_COLUMNS: dict[str, str] = {
     "action_value": "TEXT",
     "notes": "TEXT",
     "created_at": "TEXT NOT NULL",
+    "updated_at": "TEXT NOT NULL",
 }
 JOB_SNAPSHOTS_COLUMNS: dict[str, str] = {
     "id": "INTEGER PRIMARY KEY",
@@ -274,7 +275,7 @@ def load_user_actions(
         rows = list(
             connection.execute(
                 """
-                SELECT job_id, action_type, action_value, notes, created_at
+                SELECT job_id, action_type, action_value, notes, created_at, updated_at
                 FROM user_actions
                 ORDER BY created_at ASC, id ASC
                 """,
@@ -290,8 +291,11 @@ def load_user_actions(
         action_value = _normalize_optional_str(row["action_value"])
         notes = _normalize_optional_str(row["notes"])
         created_at = _normalize_optional_str(row["created_at"])
+        updated_at = _normalize_optional_str(row["updated_at"]) or created_at
 
         state = actions_by_job.setdefault(job_id, {})
+        if created_at is not None and "created_at" not in state:
+            state["created_at"] = created_at
         if action_type == "saved":
             state["saved"] = action_value or "true"
             state["application_status"] = "saved"
@@ -301,18 +305,30 @@ def load_user_actions(
         elif action_type == "application_status":
             if action_value is not None:
                 state["application_status"] = action_value
-                if action_value in {"saved", "applied", "oa_received", "interviewing", "offer"}:
+                if action_value in {"saved", "applied", "oa_received", "interviewing", "offer", "rejected"}:
                     state["saved"] = "true"
-                if action_value in {"applied", "oa_received", "interviewing", "offer"}:
+                else:
+                    state.pop("saved", None)
+                if action_value in {"applied", "oa_received", "interviewing", "offer", "rejected"}:
                     state["applied"] = "true"
+                else:
+                    state.pop("applied", None)
+                if action_value == "ignored":
+                    state["ignored"] = "true"
+                else:
+                    state.pop("ignored", None)
+                if action_value == "not_interested":
+                    state["not_interested"] = "true"
+                else:
+                    state.pop("not_interested", None)
         elif action_type == "notes":
             state["notes"] = action_value or notes or ""
         elif action_type is not None:
             state[action_type] = action_value or "true"
         if notes is not None:
             state["notes"] = notes
-        if created_at is not None:
-            state["updated_at"] = created_at
+        if updated_at is not None:
+            state["updated_at"] = updated_at
     return actions_by_job
 
 
@@ -323,22 +339,26 @@ def record_user_action(
     action_value: str | None = None,
     notes: str | None = None,
     created_at: datetime | None = None,
+    updated_at: datetime | None = None,
     cwd: Path | None = None,
 ) -> None:
     """Persist a user action row for a job."""
     connection = _connect_existing_database(cwd)
     try:
+        created = created_at or datetime.now(UTC)
+        updated = updated_at or created
         connection.execute(
             """
-            INSERT INTO user_actions (job_id, action_type, action_value, notes, created_at)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO user_actions (job_id, action_type, action_value, notes, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
                 job_id,
                 action_type,
                 action_value,
                 notes,
-                _isoformat(created_at or datetime.now(UTC)),
+                _isoformat(created),
+                _isoformat(updated),
             ),
         )
         connection.commit()
@@ -530,6 +550,8 @@ def _ensure_user_actions_table(connection: sqlite3.Connection) -> None:
             )
             """,
         )
+        return
+    _add_missing_columns(connection, "user_actions", USER_ACTIONS_COLUMNS)
 
 
 def _ensure_job_snapshots_table(connection: sqlite3.Connection) -> None:

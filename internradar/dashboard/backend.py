@@ -16,11 +16,11 @@ from internradar.core.database import (
     load_jobs_by_ids,
     load_latest_scan_run,
     load_user_actions,
-    record_user_action,
 )
 from internradar.core.errors import DatabaseError
 from internradar.core.models import Job
 from internradar.core.paths import local_database_path, local_exports_dir
+from internradar.review.user_actions import add_job_notes, set_job_action
 
 DEFAULT_HIDDEN_GEM_THRESHOLD = 70.0
 REVIEW_CONFIDENCE_THRESHOLD = 0.55
@@ -289,19 +289,8 @@ def persist_dashboard_action(
 ) -> dict[str, Any]:
     """Record a dashboard action and return fresh job detail."""
     ensure_dashboard_database(cwd)
-    normalized = action.strip().casefold()
-    if normalized == "save":
-        record_user_action(job_id, action_type="saved", action_value="true", notes=notes, cwd=cwd)
-    elif normalized == "ignore":
-        record_user_action(job_id, action_type="application_status", action_value="ignored", notes=notes, cwd=cwd)
-    elif normalized == "mark_applied":
-        record_user_action(job_id, action_type="applied", action_value="true", notes=notes, cwd=cwd)
-    elif normalized == "mark_reviewed":
-        record_user_action(job_id, action_type="reviewed", action_value="true", notes=notes, cwd=cwd)
-    elif normalized in {"oa_received", "interviewing", "rejected", "offer", "not_interested", "saved", "applied"}:
-        record_user_action(job_id, action_type="application_status", action_value=normalized, notes=notes, cwd=cwd)
-    else:
-        record_user_action(job_id, action_type=normalized, action_value=value, notes=notes, cwd=cwd)
+    del value
+    set_job_action(job_id, action=action, notes=notes, cwd=cwd)
 
     detail = load_job_detail(job_id, cwd=cwd)
     if detail is None:
@@ -317,7 +306,7 @@ def persist_dashboard_notes(
 ) -> dict[str, Any]:
     """Persist free-form dashboard notes and return fresh job detail."""
     ensure_dashboard_database(cwd)
-    record_user_action(job_id, action_type="notes", action_value=notes, notes=notes, cwd=cwd)
+    add_job_notes(job_id, notes=notes, cwd=cwd)
     detail = load_job_detail(job_id, cwd=cwd)
     if detail is None:
         raise DatabaseError(f"Job '{job_id}' was not found in the local database.")

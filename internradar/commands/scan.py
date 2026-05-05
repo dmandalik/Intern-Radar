@@ -32,6 +32,13 @@ from internradar.core.paths import local_database_path
 from internradar.parsers.eligibility_parser import apply_job_eligibility
 from internradar.parsers.job_parser import normalize_raw_job
 from internradar.parsers.role_classifier import classify_role
+from internradar.review.overrides import (
+    AppliedOverrides,
+    OverrideError,
+    apply_overrides,
+    load_overrides,
+)
+from internradar.review.user_actions import add_job_notes, set_job_action
 from internradar.scoring.opportunity_score import score_job
 from internradar.verification.duplicate_detector import deduplicate_jobs, find_duplicates
 from internradar.verification.status_checker import check_job_status
@@ -144,7 +151,7 @@ def scan(
             source=source,
             project_root=project_root,
         )
-    except (PackLoaderError, PackValidationError, ScanCommandError) as exc:
+    except (OverrideError, PackLoaderError, PackValidationError, ScanCommandError) as exc:
         typer.echo(f"Error: {exc}")
         raise typer.Exit(1) from exc
     except DatabaseError as exc:
@@ -172,6 +179,7 @@ def run_scan(
     del verbose
 
     config = load_config()
+    overrides = load_overrides()
     pack_name = _resolve_pack_name(pack, config)
     firms = load_pack_firms(pack_name, root=project_root)
     selected_firms = _select_firms(firms, company_query=company_query, max_firms=max_firms)
@@ -243,20 +251,29 @@ def run_scan(
     summary.deduplicated_jobs = len(deduped_jobs)
     summary.duplicates_merged = max(0, summary.normalized_jobs - summary.deduplicated_jobs)
     company_by_id = {firm.id: firm for firm in firms}
+    applied_overrides_by_job_id: dict[str, AppliedOverrides] = {}
+    score_ready_jobs: list[Job] = []
+    for job in deduped_jobs:
+        company = company_by_id.get(job.company_id, Company(id=job.company_id, name=job.company_name))
+        applied = apply_overrides(job, company=company, overrides=overrides)
+        company_by_id[job.company_id] = applied.company
+        applied_overrides_by_job_id[job.id] = applied
+        score_ready_jobs.append(applied.job)
+
     summary.status_counts = _sorted_counter(
-        (job.status.status for job in deduped_jobs),
+        (job.status.status for job in score_ready_jobs),
         preferred_order=STATUS_ORDER,
     )
     summary.role_family_counts = _sorted_counter(
-        (job.role.role_family for job in deduped_jobs),
+        (job.role.role_family for job in score_ready_jobs),
         sort_by_count=True,
     )
 
     existing_jobs: dict[str, Job] = {}
     if summary.scan_run_id is not None:
-        existing_jobs = load_jobs_by_ids([job.id for job in deduped_jobs])
+        existing_jobs = load_jobs_by_ids([job.id for job in score_ready_jobs])
 
-    deduped_jobs = _reconcile_existing_jobs(deduped_jobs, existing_jobs)
+    score_ready_jobs = _reconcile_existing_jobs(score_ready_jobs, existing_jobs)
     deduped_jobs = [
         score_job(
             job,
@@ -265,7 +282,7 @@ def run_scan(
             pack_name=pack_name,
             root=project_root,
         )
-        for job in deduped_jobs
+        for job in score_ready_jobs
     ]
 
     if summary.scan_run_id is not None:
@@ -279,6 +296,7 @@ def run_scan(
         summary.new_jobs = write_summary.inserted
         summary.changed_jobs = write_summary.changed
         summary.persisted = True
+        _persist_override_actions(applied_overrides_by_job_id)
         complete_scan_run(
             scan_run_id=summary.scan_run_id,
             completed_at=datetime.now(UTC),
@@ -520,6 +538,16 @@ def _summary_payload(summary: ScanSummary) -> dict[str, Any]:
         "status_counts": summary.status_counts,
         "role_family_counts": summary.role_family_counts,
     }
+
+
+def _persist_override_actions(
+    applied_overrides_by_job_id: dict[str, AppliedOverrides],
+) -> None:
+    for job_id, applied in applied_overrides_by_job_id.items():
+        if applied.application_status:
+            set_job_action(job_id, action=applied.application_status)
+        if applied.notes:
+            add_job_notes(job_id, notes=applied.notes)
 
 
 def _render_dry_run(summary: ScanSummary) -> None:
