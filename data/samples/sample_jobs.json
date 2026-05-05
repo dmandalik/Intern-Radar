@@ -1,0 +1,73 @@
+{
+  "generated_at": "2026-05-04T12:00:00+00:00",
+  "count": 6,
+  "artificial_data": true,
+  "jobs": [
+    {
+      "company_name": "North Harbor Trading",
+      "title": "Software Engineer Intern, Trading Systems",
+      "status": "open",
+      "season": "Summer",
+      "year": 2027,
+      "location": "New York, NY",
+      "role_family": "trading_systems_engineer",
+      "opportunity_score": 93.0,
+      "hidden_gem_score": 78.0
+    },
+    {
+      "company_name": "Beacon Delta",
+      "title": "Market Data Engineer Intern",
+      "status": "likely_open",
+      "season": "Summer",
+      "year": 2027,
+      "location": "Chicago, IL",
+      "role_family": "market_data_engineer",
+      "opportunity_score": 89.0,
+      "hidden_gem_score": 84.0
+    },
+    {
+      "company_name": "Helix Capital",
+      "title": "Quant Developer Intern",
+      "status": "coming_soon",
+      "season": "Summer",
+      "year": 2027,
+      "location": "Austin, TX",
+      "role_family": "quant_developer",
+      "opportunity_score": 81.0,
+      "hidden_gem_score": 72.0
+    },
+    {
+      "company_name": "Signal Lake",
+      "title": "Infrastructure Engineer Intern",
+      "status": "open",
+      "season": "Summer",
+      "year": 2027,
+      "location": "Remote",
+      "role_family": "infrastructure_engineer",
+      "opportunity_score": 87.0,
+      "hidden_gem_score": 69.0
+    },
+    {
+      "company_name": "Pine Ridge Markets",
+      "title": "FPGA Engineer Intern",
+      "status": "open",
+      "season": "Summer",
+      "year": 2027,
+      "location": "Boston, MA",
+      "role_family": "fpga_engineer",
+      "opportunity_score": 91.0,
+      "hidden_gem_score": 76.0
+    },
+    {
+      "company_name": "Atlas Microstructure",
+      "title": "Research Engineer Intern",
+      "status": "unknown",
+      "season": "Summer",
+      "year": 2027,
+      "location": "London",
+      "role_family": "research_engineer_quant",
+      "opportunity_score": 74.0,
+      "hidden_gem_score": 63.0
+    }
+  ]
+}

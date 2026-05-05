@@ -25,8 +25,15 @@ def _placeholder(command_name: str) -> None:
 
 
 @app.command()
-def init() -> None:
+def init(
+    local: bool = typer.Option(
+        True,
+        "--local/--no-local",
+        help="Initialize workspace-local Intern Radar state.",
+    ),
+) -> None:
     """Initialize local Intern Radar state."""
+    del local
     config_path, database_path = initialize_local_state()
     typer.echo(f"Created config: {config_path}")
     typer.echo(f"Created database: {database_path}")

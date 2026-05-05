@@ -69,3 +69,17 @@ class TestCli(unittest.TestCase):
                 {"scan_runs", "companies", "jobs", "user_actions", "job_snapshots"}
                 <= table_names,
             )
+
+    def test_init_local_flag_creates_local_state(self) -> None:
+        with self.runner.isolated_filesystem():
+            result = self.runner.invoke(app, ["init", "--local"])
+
+            self.assertEqual(result.exit_code, 0)
+            self.assertTrue(Path(".internradar/config.yaml").exists())
+            self.assertTrue(Path(".internradar/internradar.sqlite3").exists())
+
+    def test_quant_pack_validation_smoke(self) -> None:
+        result = self.runner.invoke(app, ["firms", "validate", "--pack", "quant_engineering"])
+
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn("Validation: passed", result.stdout)
