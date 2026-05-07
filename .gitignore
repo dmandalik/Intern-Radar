@@ -8,8 +8,14 @@ venv/
 .env
 .env.*
 .DS_Store
+.coverage
+coverage.xml
+htmlcov/
+*.egg-info/
 node_modules/
 internradar/dashboard/frontend/node_modules/
+internradar/dashboard/frontend/.vite/
+npm-debug.log*
 
 # Local Intern Radar files
 .internradar/

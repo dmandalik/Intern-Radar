@@ -551,6 +551,9 @@ def _ensure_user_actions_table(connection: sqlite3.Connection) -> None:
             """,
         )
         return
+    if _table_references_legacy_jobs(connection, "user_actions"):
+        _rebuild_user_actions_table(connection)
+        return
     _add_missing_columns(connection, "user_actions", USER_ACTIONS_COLUMNS)
 
 
@@ -565,6 +568,11 @@ def _ensure_job_snapshots_table(connection: sqlite3.Connection) -> None:
             )
             """,
         )
+        return
+    if _table_references_legacy_jobs(connection, "job_snapshots"):
+        _rebuild_job_snapshots_table(connection)
+        return
+    _add_missing_columns(connection, "job_snapshots", JOB_SNAPSHOTS_COLUMNS)
 
 
 def _create_jobs_table_sql() -> str:
@@ -602,6 +610,114 @@ def _table_columns(connection: sqlite3.Connection, table_name: str) -> set[str]:
         str(row["name"])
         for row in connection.execute(f"PRAGMA table_info({table_name})")
     }
+
+
+def _table_sql(connection: sqlite3.Connection, table_name: str) -> str:
+    row = connection.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?",
+        (table_name,),
+    ).fetchone()
+    raw_sql = row["sql"] if row is not None and row["sql"] is not None else ""
+    return str(raw_sql)
+
+
+def _table_references_legacy_jobs(connection: sqlite3.Connection, table_name: str) -> bool:
+    return "jobs_legacy" in _table_sql(connection, table_name).casefold()
+
+
+def _rebuild_user_actions_table(connection: sqlite3.Connection) -> None:
+    rows = list(
+        connection.execute(
+            """
+            SELECT id, job_id, action_type, action_value, notes, created_at, updated_at
+            FROM user_actions
+            ORDER BY id ASC
+            """,
+        ),
+    )
+    _rebuild_table_referencing_jobs(
+        connection,
+        table_name="user_actions",
+        create_sql=f"""
+            CREATE TABLE user_actions (
+                {", ".join(f"{name} {definition}" for name, definition in USER_ACTIONS_COLUMNS.items())},
+                FOREIGN KEY (job_id) REFERENCES jobs (id)
+            )
+        """,
+        insert_sql="""
+            INSERT INTO user_actions (id, job_id, action_type, action_value, notes, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        values=[
+            (
+                row["id"],
+                row["job_id"],
+                row["action_type"],
+                row["action_value"],
+                row["notes"],
+                row["created_at"],
+                row["updated_at"],
+            )
+            for row in rows
+        ],
+    )
+
+
+def _rebuild_job_snapshots_table(connection: sqlite3.Connection) -> None:
+    rows = list(
+        connection.execute(
+            """
+            SELECT id, job_id, scan_run_id, payload_json, captured_at
+            FROM job_snapshots
+            ORDER BY id ASC
+            """,
+        ),
+    )
+    _rebuild_table_referencing_jobs(
+        connection,
+        table_name="job_snapshots",
+        create_sql=f"""
+            CREATE TABLE job_snapshots (
+                {", ".join(f"{name} {definition}" for name, definition in JOB_SNAPSHOTS_COLUMNS.items())},
+                FOREIGN KEY (job_id) REFERENCES jobs (id),
+                FOREIGN KEY (scan_run_id) REFERENCES scan_runs (id)
+            )
+        """,
+        insert_sql="""
+            INSERT INTO job_snapshots (id, job_id, scan_run_id, payload_json, captured_at)
+            VALUES (?, ?, ?, ?, ?)
+        """,
+        values=[
+            (
+                row["id"],
+                row["job_id"],
+                row["scan_run_id"],
+                row["payload_json"],
+                row["captured_at"],
+            )
+            for row in rows
+        ],
+    )
+
+
+def _rebuild_table_referencing_jobs(
+    connection: sqlite3.Connection,
+    *,
+    table_name: str,
+    create_sql: str,
+    insert_sql: str,
+    values: list[tuple[Any, ...]],
+) -> None:
+    temp_table_name = f"{table_name}_legacy_rebuild"
+    connection.execute("PRAGMA foreign_keys = OFF")
+    try:
+        connection.execute(f"ALTER TABLE {table_name} RENAME TO {temp_table_name}")
+        connection.execute(create_sql)
+        if values:
+            connection.executemany(insert_sql, values)
+        connection.execute(f"DROP TABLE {temp_table_name}")
+    finally:
+        connection.execute("PRAGMA foreign_keys = ON")
 
 
 def _migrate_legacy_job_row(row: sqlite3.Row) -> dict[str, Any]:
