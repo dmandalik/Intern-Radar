@@ -8,14 +8,26 @@
   export let lastScanAt: string | null = null;
   export let theme: "dusk" | "dawn" = "dusk";
 
+  let searchDraft = search;
+
   const dispatch = createEventDispatcher<{
     search: { value: string };
     themeToggle: void;
     export: void;
   }>();
 
+  $: if (search !== searchDraft) {
+    searchDraft = search;
+  }
+
   function handleInput(event: Event): void {
-    dispatch("search", { value: (event.currentTarget as HTMLInputElement).value });
+    searchDraft = (event.currentTarget as HTMLInputElement).value;
+    dispatch("search", { value: searchDraft });
+  }
+
+  function handleSubmit(event: SubmitEvent): void {
+    event.preventDefault();
+    dispatch("search", { value: searchDraft });
   }
 </script>
 
@@ -29,12 +41,15 @@
       </div>
     </div>
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-      <input
-        class="surface-input min-w-[16rem]"
-        placeholder="Search company, role, status, signal..."
-        value={search}
-        on:input={handleInput}
-      />
+      <form class="flex min-w-[16rem] gap-2" on:submit={handleSubmit}>
+        <input
+          class="surface-input min-w-0 flex-1"
+          placeholder="Search company, role, status, signal..."
+          value={searchDraft}
+          on:input={handleInput}
+        />
+        <button class="ghost-button" type="submit">Search</button>
+      </form>
       <ThemeToggle {theme} on:toggle={() => dispatch("themeToggle")} />
       <button class="radar-button" on:click={() => dispatch("export")}>Export now</button>
     </div>

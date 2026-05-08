@@ -91,6 +91,9 @@
   async function handleSearch(value: string): Promise<void> {
     search = value;
     jobQuery = { ...jobQuery, search: value || undefined, offset: 0 };
+    if (value.trim().length > 0 && currentPage !== "jobs") {
+      currentPage = "jobs";
+    }
     await refreshJobs();
   }
 
