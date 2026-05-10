@@ -121,6 +121,29 @@ class TestExportCommand(unittest.TestCase):
         self.assertIn("Closed Role", csv_text)
         self.assertNotIn("Open Hidden Gem", csv_text)
 
+    def test_export_command_ignores_artificial_demo_rows(self) -> None:
+        with self.runner.isolated_filesystem():
+            initialize_database()
+            jobs = [
+                make_job(job_id="job-real", title="Real Role", status="open", hidden_gem_score=80),
+                make_job(job_id="job-demo", title="Demo Role", status="open", hidden_gem_score=80),
+            ]
+            upsert_jobs(
+                jobs,
+                raw_records_by_id={
+                    "job-real": {"source": "greenhouse"},
+                    "job-demo": {"artificial_demo_data": True},
+                },
+            )
+
+            result = self.runner.invoke(app, ["export", "--format", "json"])
+            exported_path = self._exported_path_from_stdout(result.stdout)
+            payload = json.loads(exported_path.read_text())
+
+        self.assertEqual(result.exit_code, 0)
+        self.assertEqual(payload["count"], 1)
+        self.assertEqual(payload["jobs"][0]["id"], "job-real")
+
     def _seed_database(self, database_path: Path) -> None:
         jobs = [
             make_job(job_id="job-open", title="Open Hidden Gem", status="open", hidden_gem_score=81),

@@ -10,7 +10,7 @@ from typing import Any, Optional
 import typer
 
 from internradar.core.config import load_config
-from internradar.core.database import database_exists, load_jobs, load_user_actions
+from internradar.core.database import database_exists, load_job_raw_payload, load_jobs, load_user_actions
 from internradar.core.errors import DatabaseError
 from internradar.core.models import Job
 from internradar.core.paths import local_exports_dir
@@ -138,6 +138,9 @@ def run_export(
     jobs = load_jobs(cwd=cwd)
     if not jobs:
         raise ExportCommandError("No jobs found in the local database. Run `internradar scan` first.")
+    jobs = [job for job in jobs if not _is_demo_job(job.id, cwd=cwd)]
+    if not jobs:
+        raise ExportCommandError("No real jobs found in the local database. Run `internradar scan` first.")
 
     user_actions = load_user_actions(cwd=cwd)
     records = _build_records(jobs, user_actions)
@@ -223,6 +226,11 @@ def _build_records(
             ),
         )
     return records
+
+
+def _is_demo_job(job_id: str, *, cwd: Path | None = None) -> bool:
+    raw_payload = load_job_raw_payload(job_id, cwd=cwd)
+    return bool(isinstance(raw_payload, dict) and raw_payload.get("artificial_demo_data"))
 
 
 def _filter_records(

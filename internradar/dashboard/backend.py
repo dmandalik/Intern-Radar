@@ -44,7 +44,12 @@ def load_dashboard_jobs(
     ensure_dashboard_database(cwd)
     jobs = load_jobs(cwd=cwd)
     actions_by_job = load_user_actions(cwd=cwd)
-    return [_serialize_job(job, actions_by_job.get(job.id, {})) for job in jobs]
+    serialized: list[dict[str, Any]] = []
+    for job in jobs:
+        if _is_demo_job(job.id, cwd=cwd):
+            continue
+        serialized.append(_serialize_job(job, actions_by_job.get(job.id, {})))
+    return serialized
 
 
 def filter_dashboard_jobs(
@@ -177,6 +182,8 @@ def load_job_detail(
     jobs = load_jobs_by_ids([job_id], cwd=cwd)
     job = jobs.get(job_id)
     if job is None:
+        return None
+    if _is_demo_job(job.id, cwd=cwd):
         return None
     action_state = load_user_actions(cwd=cwd).get(job.id, {})
     payload = _serialize_job(job, action_state)
@@ -418,6 +425,11 @@ def _normalized_application_status(action_state: dict[str, str]) -> str:
     if action_state.get("saved") in {"true", "1", "yes"}:
         return "saved"
     return ""
+
+
+def _is_demo_job(job_id: str, *, cwd: Path | None = None) -> bool:
+    raw_payload = load_job_raw_payload(job_id, cwd=cwd)
+    return bool(isinstance(raw_payload, dict) and raw_payload.get("artificial_demo_data"))
 
 
 def _eligibility_summary(job: Job) -> str:

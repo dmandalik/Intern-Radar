@@ -12,6 +12,18 @@
     select: { jobId: string };
     action: { jobId: string; action: string };
   }>();
+
+  const workflowActions = [
+    { label: "Save", action: "save" },
+    { label: "Applied", action: "mark_applied" },
+    { label: "OA", action: "oa_received" },
+    { label: "Interview", action: "interviewing" },
+    { label: "Offer", action: "offer" },
+    { label: "Rejected", action: "rejected" },
+    { label: "Ignore", action: "ignore" },
+    { label: "Not interested", action: "not_interested" },
+    { label: "Reviewed", action: "mark_reviewed" }
+  ];
 </script>
 
 <article class={`shell-card rounded-[1.6rem] p-5 ${emphasizeHiddenGem ? "ring-1 ring-[var(--warning)]/35" : ""}`}>
@@ -52,8 +64,9 @@
 
   <div class="mt-5 flex flex-wrap gap-2">
     <button class="ghost-button" on:click={() => dispatch("select", { jobId: job.id })}>View evidence</button>
-    <button class="ghost-button" on:click={() => dispatch("action", { jobId: job.id, action: "save" })}>Save</button>
-    <button class="ghost-button" on:click={() => dispatch("action", { jobId: job.id, action: "mark_applied" })}>Applied</button>
+    {#each workflowActions as item}
+      <button class="ghost-button" on:click={() => dispatch("action", { jobId: job.id, action: item.action })}>{item.label}</button>
+    {/each}
     <a class="radar-button" href={job.apply_url} target="_blank" rel="noreferrer">Open apply link</a>
   </div>
 </article>

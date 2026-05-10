@@ -194,6 +194,29 @@ class TestDashboardApi(unittest.TestCase):
         self.assertEqual(response.json()["items"], [])
         self.assertEqual(response.json()["total"], 0)
 
+    def test_dashboard_hides_artificial_demo_rows(self) -> None:
+        initialize_database(cwd=self.cwd)
+        jobs = [
+            make_job(job_id="job-real", title="Real Role"),
+            make_job(job_id="job-demo", title="Demo Role"),
+        ]
+        upsert_jobs(
+            jobs,
+            raw_records_by_id={
+                "job-real": {"source": "greenhouse"},
+                "job-demo": {"artificial_demo_data": True, "source": "demo"},
+            },
+            cwd=self.cwd,
+        )
+        client = TestClient(create_dashboard_app(cwd=self.cwd, serve_frontend=False))
+
+        response = client.get("/api/jobs")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["total"], 1)
+        self.assertEqual(payload["items"][0]["id"], "job-real")
+
     def _seeded_client(self) -> TestClient:
         initialize_database(cwd=self.cwd)
         jobs = [
