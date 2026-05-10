@@ -33,6 +33,38 @@ JOB_HTML = """
 </html>
 """
 
+GENERIC_APPLY_PAGE_HTML = """
+<html>
+  <head><title>SETTING NEW JOINERS UP FOR SUCCESS</title></head>
+  <body>
+    <h1>SETTING NEW JOINERS UP FOR SUCCESS</h1>
+    <p>Explore our student opportunities and learn more about our programs.</p>
+    <a href="/careers/jobs/4608590101/apply">Apply Now</a>
+  </body>
+</html>
+"""
+
+GENERIC_INTERNSHIP_PAGE_HTML = """
+<html>
+  <head><title>INTERNSHIP</title></head>
+  <body>
+    <h1>INTERNSHIP</h1>
+    <p>Learn about our internship program and graduate pathways.</p>
+    <a href="/apply">Apply Now</a>
+  </body>
+</html>
+"""
+
+ROOT_WITH_GENERIC_LINKS_HTML = """
+<html>
+  <body>
+    <a href="/careers/benefits">Benefits</a>
+    <a href="/careers/recruitment-process">How We Hire</a>
+    <a href="/careers/software-engineer-intern">Software Engineer Intern</a>
+  </body>
+</html>
+"""
+
 
 class TestCustomPageCollector(unittest.TestCase):
     def test_can_collect_returns_true_for_custom_ats_and_careers_url(self) -> None:
@@ -237,6 +269,97 @@ class TestCustomPageCollector(unittest.TestCase):
 
         self.assertIn("software engineer", jobs[0].raw_payload["matched_keywords"])
         self.assertIn("intern", jobs[0].raw_payload["matched_keywords"])
+
+    def test_collector_ignores_generic_marketing_page_with_apply_link(self) -> None:
+        client, _ = self._client_for_pages(
+            {
+                "https://example.com/careers": httpx.Response(
+                    200,
+                    text='<html><body><a href="/careers/students-graduates">Students & Graduates</a></body></html>',
+                    headers={"content-type": "text/html"},
+                ),
+                "https://example.com/careers/students-graduates": httpx.Response(
+                    200,
+                    text=GENERIC_APPLY_PAGE_HTML,
+                    headers={"content-type": "text/html"},
+                ),
+            },
+        )
+        collector = CustomPageCollector(client=client)
+        company = Company(id="company-1", name="Example", careers_url="https://example.com/careers")
+
+        jobs = collector.collect(company, config={})
+
+        self.assertEqual(jobs, [])
+
+    def test_collector_ignores_root_careers_page_even_with_job_keywords(self) -> None:
+        client, _ = self._client_for_pages(
+            {
+                "https://example.com/jobs/software-engineer-intern": httpx.Response(
+                    200,
+                    text=JOB_HTML,
+                    headers={"content-type": "text/html"},
+                ),
+            },
+        )
+        collector = CustomPageCollector(client=client)
+        company = Company(
+            id="company-1",
+            name="Example",
+            careers_url="https://example.com/jobs/software-engineer-intern",
+        )
+
+        jobs = collector.collect(company, config={})
+
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0].title, "Software Engineer Intern, Trading Systems")
+
+    def test_collector_does_not_follow_generic_careers_sections(self) -> None:
+        client, calls = self._client_for_pages(
+            {
+                "https://example.com/careers": httpx.Response(
+                    200,
+                    text=ROOT_WITH_GENERIC_LINKS_HTML,
+                    headers={"content-type": "text/html"},
+                ),
+                "https://example.com/careers/software-engineer-intern": httpx.Response(
+                    200,
+                    text=JOB_HTML,
+                    headers={"content-type": "text/html"},
+                ),
+            },
+        )
+        collector = CustomPageCollector(client=client)
+        company = Company(id="company-1", name="Example", careers_url="https://example.com/careers")
+
+        jobs = collector.collect(company, config={})
+
+        self.assertEqual(len(jobs), 1)
+        self.assertIn("https://example.com/careers/software-engineer-intern", calls)
+        self.assertNotIn("https://example.com/careers/benefits", calls)
+        self.assertNotIn("https://example.com/careers/recruitment-process", calls)
+
+    def test_collector_ignores_generic_internship_program_page(self) -> None:
+        client, _ = self._client_for_pages(
+            {
+                "https://example.com/careers": httpx.Response(
+                    200,
+                    text='<html><body><a href="/careers/internships">Internships</a></body></html>',
+                    headers={"content-type": "text/html"},
+                ),
+                "https://example.com/careers/internships": httpx.Response(
+                    200,
+                    text=GENERIC_INTERNSHIP_PAGE_HTML,
+                    headers={"content-type": "text/html"},
+                ),
+            },
+        )
+        collector = CustomPageCollector(client=client)
+        company = Company(id="company-1", name="Example", careers_url="https://example.com/careers")
+
+        jobs = collector.collect(company, config={})
+
+        self.assertEqual(jobs, [])
 
     def test_registry_defaults_include_custom_page_collector(self) -> None:
         registry = CollectorRegistry.with_defaults()

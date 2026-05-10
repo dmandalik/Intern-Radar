@@ -45,6 +45,18 @@ POSITIVE_KEYWORDS = (
     "quant",
     "research",
 )
+GENERIC_DISCOVERY_KEYWORDS = {
+    "career",
+    "careers",
+    "job",
+    "jobs",
+    "student",
+    "students",
+    "graduate",
+    "grads",
+    "university",
+    "campus",
+}
 NEGATIVE_KEYWORDS = (
     "login",
     "signin",
@@ -63,6 +75,64 @@ NEGATIVE_KEYWORDS = (
     "facebook",
     "twitter",
     "instagram",
+)
+SPECIFIC_ROLE_SIGNALS = (
+    "engineer",
+    "developer",
+    "analyst",
+    "researcher",
+    "scientist",
+    "trader",
+    "trading",
+    "quant",
+    "software",
+    "market data",
+    "infrastructure",
+    "fpga",
+    "systems",
+    "backend",
+    "hardware",
+    "machine learning",
+    "data",
+)
+GENERIC_TITLE_SIGNALS = (
+    "life at",
+    "our offices",
+    "work at",
+    "careers",
+    "benefits",
+    "recruitment process",
+    "how we hire",
+    "talent community",
+    "student opportunities",
+    "students and graduates",
+    "students & graduates",
+    "experienced roles",
+    "diversity, equity, inclusion",
+    "limitless opportunities",
+    "setting new joiners up for success",
+    "powered by technology, built by engineers",
+    "here to help you thrive",
+    "cultivating a diverse",
+    "paths with purpose",
+    "launchpad",
+    "learning by doing",
+)
+EXACT_GENERIC_TITLES = {
+    "internship",
+    "internships",
+    "student opportunities",
+    "students & graduates",
+    "students and graduates",
+    "early careers",
+    "programs",
+}
+DIRECT_JOB_URL_PATTERNS = (
+    "/jobs/",
+    "/job/",
+    "/positions/",
+    "/position/",
+    "/apply",
 )
 JOB_SIGNALS = (
     "intern",
@@ -281,6 +351,8 @@ class CustomPageCollector:
             matched_keywords = [keyword for keyword in POSITIVE_KEYWORDS if keyword in scoring_text]
             if not matched_keywords:
                 continue
+            if not self._is_specific_candidate(normalized_url, matched_keywords):
+                continue
 
             seen.add(normalized_url)
             candidates.append(
@@ -318,6 +390,15 @@ class CustomPageCollector:
         apply_url = self._detect_apply_url(page.soup, page.url)
         location_raw = self._detect_location(page.text)
         department = self._detect_department(page.text)
+        if not self._is_plausible_job_page(
+            title=title,
+            page_url=page.url,
+            apply_url=apply_url,
+            anchor_text=anchor_text,
+            matched_keywords=matched,
+            depth=depth,
+        ):
+            return None
 
         return RawJob(
             source_type=self.source_type,
@@ -346,20 +427,24 @@ class CustomPageCollector:
         page_title: str | None,
         anchor_text: str | None,
     ) -> str | None:
+        candidates: list[str] = []
         for tag_name in ("h1", "h2"):
             heading = soup.find(tag_name)
             if heading:
                 text = self._clean_text(heading.get_text(" ", strip=True))
                 if text:
-                    return text
+                    candidates.append(text)
 
         for candidate in (page_title, anchor_text):
             if candidate:
                 cleaned = self._clean_text(candidate)
                 if cleaned:
-                    return cleaned
+                    candidates.append(cleaned)
 
-        return None
+        if not candidates:
+            return None
+
+        return max(candidates, key=self._title_specificity_score)
 
     def _matched_job_keywords(
         self,
@@ -396,6 +481,58 @@ class CustomPageCollector:
         if match:
             return self._clean_text(match.group(1))
         return None
+
+    def _is_specific_candidate(self, url: str, matched_keywords: list[str]) -> bool:
+        if self._looks_like_direct_job_url(url):
+            return True
+        return any(keyword not in GENERIC_DISCOVERY_KEYWORDS for keyword in matched_keywords)
+
+    def _is_plausible_job_page(
+        self,
+        *,
+        title: str,
+        page_url: str,
+        apply_url: str | None,
+        anchor_text: str | None,
+        matched_keywords: list[str],
+        depth: int,
+    ) -> bool:
+        lowered_title = title.casefold()
+        if self._is_generic_title(lowered_title):
+            return False
+        if depth == 0 and not self._looks_like_direct_job_url(page_url):
+            return False
+        if apply_url is None:
+            return False
+
+        title_has_role_signal = any(signal in lowered_title for signal in SPECIFIC_ROLE_SIGNALS)
+        anchor_has_role_signal = any(
+            signal in (anchor_text or "").casefold() for signal in SPECIFIC_ROLE_SIGNALS
+        )
+        if not title_has_role_signal and not anchor_has_role_signal and not self._looks_like_direct_job_url(page_url):
+            return False
+
+        non_generic_matches = [keyword for keyword in matched_keywords if keyword not in GENERIC_DISCOVERY_KEYWORDS]
+        if not non_generic_matches and not self._looks_like_direct_job_url(page_url):
+            return False
+
+        return True
+
+    def _looks_like_direct_job_url(self, url: str) -> bool:
+        lowered = url.casefold()
+        return any(pattern in lowered for pattern in DIRECT_JOB_URL_PATTERNS)
+
+    def _is_generic_title(self, lowered_title: str) -> bool:
+        normalized = lowered_title.strip(" -|:")
+        return normalized in EXACT_GENERIC_TITLES or any(
+            signal in lowered_title for signal in GENERIC_TITLE_SIGNALS
+        )
+
+    def _title_specificity_score(self, title: str) -> tuple[int, int, int]:
+        lowered = title.casefold()
+        role_hits = sum(1 for signal in SPECIFIC_ROLE_SIGNALS if signal in lowered)
+        generic_penalty = sum(1 for signal in GENERIC_TITLE_SIGNALS if signal in lowered)
+        return (role_hits, -generic_penalty, -len(lowered))
 
     def _clean_text(self, value: str) -> str:
         return re.sub(r"\s+", " ", value).strip()
