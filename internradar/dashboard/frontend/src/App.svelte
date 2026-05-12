@@ -16,6 +16,11 @@
   import type { DashboardJob, FilterOptions, JobQuery, PageId, SettingsResponse, SummaryResponse } from "./lib/types";
 
   const hiddenGemDefaultThreshold = 70;
+  const fullDatasetQuery: JobQuery = {
+    ...emptyQuery(),
+    limit: 5000,
+    offset: 0,
+  };
 
   let currentPage: PageId = "overview";
   let theme: "dusk" | "dawn" = "dusk";
@@ -24,6 +29,7 @@
   let filterOptions: FilterOptions | null = null;
   let jobQuery: JobQuery = emptyQuery();
   let jobs: DashboardJob[] = [];
+  let allJobs: DashboardJob[] = [];
   let jobsTotal = 0;
   let selectedJob: DashboardJob | null = null;
   let loading = true;
@@ -50,16 +56,18 @@
     error = "";
     try {
       await getHealth();
-      const [summaryResponse, filtersResponse, jobsResponse, settingsResponse] = await Promise.all([
+      const [summaryResponse, filtersResponse, jobsResponse, allJobsResponse, settingsResponse] = await Promise.all([
         getSummary(),
         getFilters(),
         getJobs(jobQuery),
+        getJobs(fullDatasetQuery),
         getSettings()
       ]);
       summary = summaryResponse;
       filterOptions = filtersResponse;
       jobs = jobsResponse.items;
       jobsTotal = jobsResponse.total;
+      allJobs = allJobsResponse.items;
       settings = settingsResponse;
     } catch (caught) {
       error = caught instanceof Error ? caught.message : "Unknown dashboard error";
@@ -148,10 +156,10 @@
     currentPage = page;
   }
 
-  $: hiddenGemJobs = jobs.filter((job) => job.scores.hidden_gem_score >= hiddenGemThreshold);
-  $: comingSoonJobs = jobs.filter((job) => job.status === "coming_soon");
-  $: savedJobs = jobs.filter((job) => Boolean(job.application_status));
-  $: reviewJobs = jobs.filter((job) => job.needs_review);
+  $: hiddenGemJobs = allJobs.filter((job) => job.scores.hidden_gem_score >= hiddenGemThreshold);
+  $: comingSoonJobs = allJobs.filter((job) => job.status === "coming_soon");
+  $: savedJobs = allJobs.filter((job) => Boolean(job.application_status));
+  $: reviewJobs = allJobs.filter((job) => job.needs_review);
 </script>
 
 <Layout
