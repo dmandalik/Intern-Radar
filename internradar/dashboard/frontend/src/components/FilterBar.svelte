@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
+  import { emptyQuery } from "../lib/filters";
   import type { FilterOptions, JobQuery } from "../lib/types";
 
   export let filters: JobQuery;
@@ -22,6 +23,10 @@
     };
     dispatch("change", { filters: next });
   }
+
+  function reset(): void {
+    dispatch("change", { filters: emptyQuery() });
+  }
 </script>
 
 <div class="shell-card rounded-[1.6rem] p-4">
@@ -30,6 +35,7 @@
       <div class="section-eyebrow">Filters</div>
       <h3 class="mt-1 text-lg font-medium">Tighten the radar cone.</h3>
     </div>
+    <button class="ghost-button text-sm" on:click={reset}>Clear</button>
   </div>
   <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
     <select class="surface-input" on:change={(event) => update("status", (event.currentTarget as HTMLSelectElement).value)}>
@@ -54,6 +60,48 @@
       <option value="">All sources</option>
       {#each options?.source_types ?? [] as item}
         <option value={item} selected={filters.source_type === item}>{item}</option>
+      {/each}
+    </select>
+    <select class="surface-input" on:change={(event) => update("company", (event.currentTarget as HTMLSelectElement).value)}>
+      <option value="">All companies</option>
+      {#each options?.companies ?? [] as item}
+        <option value={item} selected={filters.company === item}>{item}</option>
+      {/each}
+    </select>
+    <select class="surface-input" on:change={(event) => update("prestige_tier", (event.currentTarget as HTMLSelectElement).value)}>
+      <option value="">All prestige tiers</option>
+      {#each options?.prestige_tiers ?? [] as item}
+        <option value={item} selected={filters.prestige_tier === item}>{item}</option>
+      {/each}
+    </select>
+    <select class="surface-input" on:change={(event) => update("location", (event.currentTarget as HTMLSelectElement).value)}>
+      <option value="">All locations</option>
+      {#each options?.locations ?? [] as item}
+        <option value={item} selected={filters.location === item}>{item}</option>
+      {/each}
+    </select>
+    <select class="surface-input" on:change={(event) => update("season", (event.currentTarget as HTMLSelectElement).value)}>
+      <option value="">All seasons</option>
+      {#each options?.seasons ?? [] as item}
+        <option value={item} selected={filters.season === item}>{item}</option>
+      {/each}
+    </select>
+    <select class="surface-input" on:change={(event) => update("year", (event.currentTarget as HTMLSelectElement).value)}>
+      <option value="">All years</option>
+      {#each options?.years ?? [] as item}
+        <option value={item} selected={filters.year === item}>{item}</option>
+      {/each}
+    </select>
+    <select class="surface-input" on:change={(event) => update("remote_type", (event.currentTarget as HTMLSelectElement).value)}>
+      <option value="">All remote modes</option>
+      {#each options?.remote_types ?? [] as item}
+        <option value={item} selected={filters.remote_type === item}>{item}</option>
+      {/each}
+    </select>
+    <select class="surface-input" on:change={(event) => update("sponsorship", (event.currentTarget as HTMLSelectElement).value)}>
+      <option value="">All sponsorship states</option>
+      {#each options?.sponsorships ?? [] as item}
+        <option value={item} selected={filters.sponsorship === item}>{item}</option>
       {/each}
     </select>
     <input
