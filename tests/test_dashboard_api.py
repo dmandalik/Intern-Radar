@@ -145,6 +145,13 @@ class TestDashboardApi(unittest.TestCase):
         actions = load_user_actions(cwd=self.cwd)
         self.assertEqual(actions["job-open"]["application_status"], "oa_received")
 
+        ignored = client.post("/api/jobs/job-open/action", json={"action": "ignore"})
+        self.assertEqual(ignored.status_code, 200)
+        self.assertEqual(ignored.json()["job"]["application_status"], "ignored")
+        self.assertEqual(ignored.json()["job"]["ignored"], True)
+        actions = load_user_actions(cwd=self.cwd)
+        self.assertEqual(actions["job-open"]["application_status"], "ignored")
+
     def test_action_endpoint_can_mark_reviewed(self) -> None:
         client = self._seeded_client()
 
