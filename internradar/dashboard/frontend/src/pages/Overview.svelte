@@ -28,7 +28,7 @@
       <MetricCard label="Total Jobs" value={summary.total_jobs} hint="Normalized and deduplicated." />
       <MetricCard label="Open Roles" value={summary.counts.open + summary.counts.likely_open} hint="Immediate attention window." accent="var(--success)" />
       <MetricCard label="Hidden Gems" value={summary.counts.hidden_gems} hint="Credible, technical, less obvious." accent="var(--warning)" />
-      <MetricCard label="Saved / Applied" value={`${summary.counts.saved} / ${summary.counts.applied}`} hint="Application workflow state." accent="var(--accent-2)" />
+      <MetricCard label="Tracked / Applied" value={`${summary.counts.saved} / ${summary.counts.applied}`} hint="Application workflow state." accent="var(--accent-2)" />
     </div>
 
     <div class="grid gap-5 xl:grid-cols-[1.4fr_0.9fr]">
