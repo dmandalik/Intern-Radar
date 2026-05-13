@@ -155,6 +155,44 @@ class TestDashboardApi(unittest.TestCase):
         actions = load_user_actions(cwd=self.cwd)
         self.assertEqual(actions["job-open"]["reviewed"], "true")
 
+    def test_mark_reviewed_removes_job_from_review_queue(self) -> None:
+        initialize_database(cwd=self.cwd)
+        review_job = make_job(
+            job_id="job-review",
+            title="Review Me",
+            status="unknown",
+        )
+        upsert_jobs([review_job], raw_records_by_id={review_job.id: {"source": review_job.source_type}}, cwd=self.cwd)
+        client = TestClient(create_dashboard_app(cwd=self.cwd, serve_frontend=False))
+
+        before = client.get("/api/jobs/job-review")
+        self.assertEqual(before.status_code, 200)
+        self.assertEqual(before.json()["needs_review"], True)
+
+        marked = client.post("/api/jobs/job-review/action", json={"action": "mark_reviewed"})
+        self.assertEqual(marked.status_code, 200)
+        self.assertEqual(marked.json()["job"]["reviewed"], True)
+        self.assertEqual(marked.json()["job"]["needs_review"], False)
+
+        summary = client.get("/api/summary")
+        self.assertEqual(summary.status_code, 200)
+        self.assertEqual(summary.json()["counts"]["review_needed"], 0)
+
+    def test_ignore_action_removes_job_from_review_queue(self) -> None:
+        initialize_database(cwd=self.cwd)
+        review_job = make_job(
+            job_id="job-ignore-review",
+            title="Ignore Me",
+            status="unknown",
+        )
+        upsert_jobs([review_job], raw_records_by_id={review_job.id: {"source": review_job.source_type}}, cwd=self.cwd)
+        client = TestClient(create_dashboard_app(cwd=self.cwd, serve_frontend=False))
+
+        marked = client.post("/api/jobs/job-ignore-review/action", json={"action": "ignore"})
+        self.assertEqual(marked.status_code, 200)
+        self.assertEqual(marked.json()["job"]["ignored"], True)
+        self.assertEqual(marked.json()["job"]["needs_review"], False)
+
     def test_notes_endpoint_persists_notes(self) -> None:
         client = self._seeded_client()
 
