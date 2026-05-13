@@ -405,6 +405,8 @@ def _serialize_job(job: Job, action_state: dict[str, str]) -> dict[str, Any]:
 
 
 def _needs_review(job: dict[str, Any]) -> bool:
+    if job.get("reviewed") or job.get("ignored"):
+        return False
     return any(
         (
             job["status"] in {"unknown", "requires_login"},

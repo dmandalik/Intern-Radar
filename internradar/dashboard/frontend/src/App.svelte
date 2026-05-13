@@ -106,7 +106,8 @@
   }
 
   async function handleFilterChange(next: JobQuery): Promise<void> {
-    jobQuery = { ...jobQuery, ...next, offset: 0 };
+    jobQuery = { ...next, offset: 0 };
+    search = next.search ?? "";
     await refreshJobs();
   }
 
