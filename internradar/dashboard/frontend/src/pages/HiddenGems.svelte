@@ -12,7 +12,7 @@
 </script>
 
 <section class="space-y-5">
-  <div class="shell-card rounded-[1.8rem] p-6">
+  <div class="shell-card signal-card hero-orbit rounded-[1.8rem] p-6">
     <div class="section-eyebrow">Hidden gems</div>
     <h2 class="page-title mt-3">Under-the-radar roles with real signal.</h2>
     <p class="mt-3 max-w-3xl text-sm leading-7 text-[var(--muted)]">
@@ -23,6 +23,22 @@
       <label class="section-eyebrow" for="hidden-gem-threshold">Threshold {threshold}</label>
       <input id="hidden-gem-threshold" class="mt-3 w-full accent-[var(--accent)]" type="range" min="50" max="95" step="1" value={threshold} on:input={(event) => onThresholdChange(Number((event.currentTarget as HTMLInputElement).value))} />
     </div>
+  </div>
+
+  <div class="grid gap-4 xl:grid-cols-3">
+    <section class="shell-card signal-card rounded-[1.5rem] p-5">
+      <div class="section-eyebrow">Signal count</div>
+      <div class="mt-2 text-4xl font-semibold">{jobs.length}</div>
+      <p class="mt-2 text-sm text-[var(--muted)]">Roles currently clearing the hidden-gem threshold.</p>
+    </section>
+    <section class="shell-card signal-card rounded-[1.5rem] p-5">
+      <div class="section-eyebrow">Why these surfaced</div>
+      <p class="mt-2 text-sm leading-7 text-[var(--muted)]">They combine technical depth, freshness, and candidate fit without relying only on prestige.</p>
+    </section>
+    <section class="shell-card signal-card rounded-[1.5rem] p-5">
+      <div class="section-eyebrow">Use this page for</div>
+      <p class="mt-2 text-sm leading-7 text-[var(--muted)]">Finding credible roles that the prestige-first crowd may overlook but that still have real application signal.</p>
+    </section>
   </div>
 
   {#if jobs.length === 0}

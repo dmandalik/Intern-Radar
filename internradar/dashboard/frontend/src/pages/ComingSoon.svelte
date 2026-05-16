@@ -10,12 +10,28 @@
 </script>
 
 <section class="space-y-5">
-  <div class="shell-card rounded-[1.8rem] p-6">
+  <div class="shell-card signal-card hero-orbit rounded-[1.8rem] p-6">
     <div class="section-eyebrow">Watchlist</div>
     <h2 class="page-title mt-3">Signals that are not open yet, but matter.</h2>
     <p class="mt-3 max-w-3xl text-sm leading-7 text-[var(--muted)]">
       Track the firms and pages that hint at future internship cycles so you can return before the market gets crowded.
     </p>
+  </div>
+
+  <div class="grid gap-4 xl:grid-cols-3">
+    <section class="shell-card signal-card rounded-[1.5rem] p-5">
+      <div class="section-eyebrow">Watchlist count</div>
+      <div class="mt-2 text-4xl font-semibold">{jobs.length}</div>
+      <p class="mt-2 text-sm text-[var(--muted)]">Signals worth checking back on before the next cycle opens.</p>
+    </section>
+    <section class="shell-card signal-card rounded-[1.5rem] p-5">
+      <div class="section-eyebrow">How to use this</div>
+      <p class="mt-2 text-sm leading-7 text-[var(--muted)]">Save firms with credible timing hints, then revisit them before broader lists become saturated.</p>
+    </section>
+    <section class="shell-card signal-card rounded-[1.5rem] p-5">
+      <div class="section-eyebrow">Best next move</div>
+      <p class="mt-2 text-sm leading-7 text-[var(--muted)]">Open the source, save the role, and use the pipeline to keep it visible instead of letting the signal disappear.</p>
+    </section>
   </div>
 
   {#if jobs.length === 0}

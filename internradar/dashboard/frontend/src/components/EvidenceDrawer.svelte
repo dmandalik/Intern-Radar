@@ -7,8 +7,20 @@
 
   export let job: DashboardJob | null = null;
 
-  const dispatch = createEventDispatcher<{ close: void; noteSave: { notes: string } }>();
+  const dispatch = createEventDispatcher<{ close: void; noteSave: { notes: string }; action: { jobId: string; action: string } }>();
   let draftNotes = "";
+
+  const workflowActions = [
+    { label: "Save", action: "save" },
+    { label: "Applied", action: "mark_applied" },
+    { label: "OA received", action: "oa_received" },
+    { label: "Interviewing", action: "interviewing" },
+    { label: "Offer", action: "offer" },
+    { label: "Rejected", action: "rejected" },
+    { label: "Ignore", action: "ignore" },
+    { label: "Not interested", action: "not_interested" },
+    { label: "Reviewed", action: "mark_reviewed" },
+  ];
 
   $: if (job) {
     draftNotes = job.notes ?? "";
@@ -45,6 +57,15 @@
       </div>
 
       <div class="mt-6 grid gap-5">
+        <section class="glass-panel rounded-[1.4rem] p-4">
+          <div class="section-eyebrow">Workflow actions</div>
+          <div class="mt-3 flex flex-wrap gap-2">
+            {#each workflowActions as item}
+              <button class="ghost-button" on:click={() => dispatch("action", { jobId: job.id, action: item.action })}>{item.label}</button>
+            {/each}
+          </div>
+        </section>
+
         <section class="glass-panel rounded-[1.4rem] p-4">
           <div class="section-eyebrow">Scoring explanation</div>
           <ul class="mt-3 space-y-2 text-sm text-[var(--muted)]">

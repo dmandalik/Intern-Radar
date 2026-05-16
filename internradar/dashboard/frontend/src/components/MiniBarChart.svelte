@@ -5,7 +5,7 @@
   const max = Math.max(...rows.map((row) => row.value), 1);
 </script>
 
-<article class="shell-card rounded-[1.6rem] p-5">
+<article class="shell-card signal-card rounded-[1.6rem] p-5">
   <div class="flex items-center justify-between">
     <h3 class="text-lg font-medium">{title}</h3>
     <span class="section-eyebrow">signal map</span>
@@ -19,7 +19,7 @@
         </div>
         <div class="h-2 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--surface-2)_84%,transparent)]">
           <div
-            class="h-full rounded-full"
+            class="chart-bar h-full rounded-full"
             style={`width:${(row.value / max) * 100}%; background: linear-gradient(90deg, var(--accent), var(--accent-2));`}
           ></div>
         </div>

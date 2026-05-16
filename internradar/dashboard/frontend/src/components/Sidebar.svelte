@@ -13,7 +13,7 @@
     { id: "jobs", label: "Jobs" },
     { id: "hidden_gems", label: "Hidden Gems", metric: "hidden_gems" },
     { id: "coming_soon", label: "Coming Soon", metric: "coming_soon" },
-    { id: "saved", label: "Saved", metric: "saved" },
+    { id: "saved", label: "Pipeline", metric: "saved" },
     { id: "review", label: "Review", metric: "review_needed" },
     { id: "settings", label: "Settings" },
     { id: "export", label: "Export" }

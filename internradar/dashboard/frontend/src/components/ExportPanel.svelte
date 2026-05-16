@@ -9,11 +9,11 @@
   }>();
 
   const actions = [
-    { label: "CSV", format: "csv" },
-    { label: "JSON", format: "json" },
-    { label: "XLSX", format: "xlsx" },
-    { label: "HTML", format: "html" },
-    { label: "Markdown", format: "markdown" }
+    { label: "CSV", format: "csv", note: "Quick spreadsheet imports and ad-hoc slicing." },
+    { label: "JSON", format: "json", note: "Complete machine-readable archive of the shortlist." },
+    { label: "XLSX", format: "xlsx", note: "Best for tracking and recruiter-style application lists." },
+    { label: "HTML", format: "html", note: "Polished static report for review and sharing locally." },
+    { label: "Markdown", format: "markdown", note: "GitHub-friendly summary and notes-ready output." }
   ];
 </script>
 
@@ -22,11 +22,20 @@
     <div class="section-eyebrow">Export formats</div>
     <h3 class="mt-2 text-2xl font-semibold">Publish a polished application list.</h3>
     <p class="mt-2 text-sm text-[var(--muted)]">Generate spreadsheet, report, and archival formats straight from the local job database.</p>
-    <div class="mt-5 flex flex-wrap gap-3">
+    <div class="mt-5 grid gap-3 md:grid-cols-2">
       {#each actions as action}
-        <button class="ghost-button" disabled={busy} on:click={() => dispatch("export", { format: action.format })}>{action.label}</button>
+        <button class="glass-panel rounded-[1.2rem] p-4 text-left transition hover:border-[var(--accent)]/35" disabled={busy} on:click={() => dispatch("export", { format: action.format })}>
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-base font-semibold">{action.label}</span>
+            <span class="section-eyebrow">Export</span>
+          </div>
+          <div class="mt-2 text-sm text-[var(--muted)]">{action.note}</div>
+        </button>
       {/each}
+    </div>
+    <div class="mt-4 flex flex-wrap gap-3">
       <button class="radar-button" disabled={busy} on:click={() => dispatch("export", { format: "json", all: true })}>Export all formats</button>
+      <button class="ghost-button" disabled={busy} on:click={() => dispatch("export", { format: "html" })}>Build polished report</button>
     </div>
   </section>
 
