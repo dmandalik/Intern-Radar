@@ -27,6 +27,28 @@
       </section>
 
       <section class="shell-card rounded-[1.7rem] p-5">
+        <div class="section-eyebrow">Candidate profile</div>
+        <div class="mt-4 grid gap-4 text-sm sm:grid-cols-2">
+          <div class="glass-panel rounded-[1.2rem] p-4">
+            <div class="section-eyebrow">Preferred locations</div>
+            <div class="mt-2">{settings.preferred_locations.length > 0 ? settings.preferred_locations.join(", ") : "Not configured"}</div>
+          </div>
+          <div class="glass-panel rounded-[1.2rem] p-4">
+            <div class="section-eyebrow">Target roles</div>
+            <div class="mt-2">{settings.target_roles.length > 0 ? settings.target_roles.join(", ") : "Not configured"}</div>
+          </div>
+          <div class="glass-panel rounded-[1.2rem] p-4">
+            <div class="section-eyebrow">Deprioritized roles</div>
+            <div class="mt-2">{settings.deprioritized_roles.length > 0 ? settings.deprioritized_roles.join(", ") : "Not configured"}</div>
+          </div>
+          <div class="glass-panel rounded-[1.2rem] p-4">
+            <div class="section-eyebrow">Candidate data</div>
+            <div class="mt-2 text-[var(--muted)]">{settings.candidate ? "Loaded from local config" : "No candidate profile configured"}</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="shell-card rounded-[1.7rem] p-5 xl:col-span-2">
         <div class="section-eyebrow">Raw config snapshot</div>
         <pre class="mt-4 overflow-x-auto rounded-[1.2rem] border border-[var(--border)] p-4 text-xs text-[var(--muted)]">{JSON.stringify(settings.raw_config, null, 2)}</pre>
       </section>

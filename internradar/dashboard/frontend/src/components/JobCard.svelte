@@ -13,20 +13,33 @@
     action: { jobId: string; action: string };
   }>();
 
-  const workflowActions = [
-    { label: "Save", action: "save" },
-    { label: "Applied", action: "mark_applied" },
-    { label: "OA", action: "oa_received" },
-    { label: "Interview", action: "interviewing" },
-    { label: "Offer", action: "offer" },
-    { label: "Rejected", action: "rejected" },
-    { label: "Ignore", action: "ignore" },
-    { label: "Not interested", action: "not_interested" },
-    { label: "Reviewed", action: "mark_reviewed" }
-  ];
+  type QuickAction = { label: string; action: string } | null;
+
+  function quickActionForJob(currentJob: DashboardJob): QuickAction {
+    if (currentJob.ignored) return null;
+    if (currentJob.needs_review && !currentJob.reviewed) {
+      return { label: "Mark reviewed", action: "mark_reviewed" };
+    }
+    switch (currentJob.application_status) {
+      case "":
+        return { label: "Save", action: "save" };
+      case "saved":
+        return { label: "Mark applied", action: "mark_applied" };
+      case "applied":
+        return { label: "Log OA", action: "oa_received" };
+      case "oa_received":
+        return { label: "Log interview", action: "interviewing" };
+      case "interviewing":
+        return { label: "Record offer", action: "offer" };
+      default:
+        return null;
+    }
+  }
+
+  $: quickAction = quickActionForJob(job);
 </script>
 
-<article class={`shell-card rounded-[1.6rem] p-5 ${emphasizeHiddenGem ? "ring-1 ring-[var(--warning)]/35" : ""}`}>
+<article class={`shell-card signal-card rounded-[1.6rem] p-5 ${emphasizeHiddenGem ? "ring-1 ring-[var(--warning)]/35" : ""}`}>
   <div class="flex items-start justify-between gap-4">
     <div>
       <div class="section-eyebrow">{job.company_name}</div>
@@ -49,6 +62,12 @@
     <ScorePill label="Gem" value={job.scores.hidden_gem_score} accent="var(--warning)" />
   </div>
 
+  {#if emphasizeHiddenGem}
+    <div class="glass-panel mt-4 rounded-[1.2rem] p-3 text-sm text-[var(--muted)]">
+      {job.score_explanation[0] ?? "High hidden-gem signal with credible technical fit and fresh availability."}
+    </div>
+  {/if}
+
   <p class="mt-4 line-clamp-3 text-sm leading-6 text-[var(--muted)]">
     {job.description ?? "No description captured yet."}
   </p>
@@ -63,10 +82,10 @@
   </div>
 
   <div class="mt-5 flex flex-wrap gap-2">
-    <button class="ghost-button" on:click={() => dispatch("select", { jobId: job.id })}>View evidence</button>
-    {#each workflowActions as item}
-      <button class="ghost-button" on:click={() => dispatch("action", { jobId: job.id, action: item.action })}>{item.label}</button>
-    {/each}
+    <button class="ghost-button" on:click={() => dispatch("select", { jobId: job.id })}>Open dossier</button>
+    {#if quickAction}
+      <button class="ghost-button" on:click={() => dispatch("action", { jobId: job.id, action: quickAction.action })}>{quickAction.label}</button>
+    {/if}
     <a class="radar-button" href={job.apply_url} target="_blank" rel="noreferrer">Open apply link</a>
   </div>
 </article>

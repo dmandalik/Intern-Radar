@@ -27,9 +27,12 @@
 </script>
 
 <section class="space-y-5">
-  <div class="shell-card rounded-[1.8rem] p-6">
+  <div class="shell-card signal-card hero-orbit rounded-[1.8rem] p-6">
     <div class="section-eyebrow">Workflow</div>
-    <h2 class="page-title mt-3">Saved roles and application progress.</h2>
+    <h2 class="page-title mt-3">Pipeline: tracked roles and application progress.</h2>
+    <p class="mt-3 max-w-3xl text-sm leading-7 text-[var(--muted)]">
+      Use this page as the working surface for what you are actually tracking, applying to, or intentionally dropping.
+    </p>
   </div>
 
   {#if visibleLanes.length === 0}

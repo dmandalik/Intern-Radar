@@ -11,15 +11,24 @@
     action: { jobId: string; action: string };
   }>();
 
-  const workflowActions = [
-    { label: "Save", action: "save" },
-    { label: "Applied", action: "mark_applied" },
-    { label: "OA", action: "oa_received" },
-    { label: "Interview", action: "interviewing" },
-    { label: "Offer", action: "offer" },
-    { label: "Reject", action: "rejected" },
-    { label: "Ignore", action: "ignore" }
-  ];
+  type QuickAction = { label: string; action: string } | null;
+
+  function quickActionForJob(currentJob: DashboardJob): QuickAction {
+    if (currentJob.ignored) return null;
+    if (currentJob.needs_review && !currentJob.reviewed) {
+      return { label: "Reviewed", action: "mark_reviewed" };
+    }
+    switch (currentJob.application_status) {
+      case "":
+        return { label: "Save", action: "save" };
+      case "saved":
+        return { label: "Applied", action: "mark_applied" };
+      case "applied":
+        return { label: "OA", action: "oa_received" };
+      default:
+        return null;
+    }
+  }
 </script>
 
 <div class="shell-card overflow-x-auto rounded-[1.6rem] p-2">
@@ -51,10 +60,13 @@
           <td class="px-3 py-4 text-[var(--muted)]">{formatDate(job.last_verified)}</td>
           <td class="px-3 py-4">
             <div class="flex flex-wrap gap-2">
-              <button class="ghost-button text-xs" on:click={() => dispatch("select", { jobId: job.id })}>Evidence</button>
-              {#each workflowActions as item}
-                <button class="ghost-button text-xs" on:click={() => dispatch("action", { jobId: job.id, action: item.action })}>{item.label}</button>
-              {/each}
+              <button class="ghost-button text-xs" on:click={() => dispatch("select", { jobId: job.id })}>Dossier</button>
+              {#if quickActionForJob(job)}
+                <button class="ghost-button text-xs" on:click={() => dispatch("action", { jobId: job.id, action: quickActionForJob(job)?.action ?? "save" })}>
+                  {quickActionForJob(job)?.label}
+                </button>
+              {/if}
+              <a class="ghost-button text-xs" href={job.apply_url} target="_blank" rel="noreferrer">Apply</a>
             </div>
           </td>
         </tr>

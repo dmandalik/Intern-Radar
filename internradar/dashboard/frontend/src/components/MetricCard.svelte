@@ -5,7 +5,7 @@
   export let accent = "var(--accent)";
 </script>
 
-<article class="shell-card rounded-[1.4rem] p-5">
+<article class="shell-card signal-card metric-glow rounded-[1.4rem] p-5">
   <div class="section-eyebrow">{label}</div>
   <div class="mt-3 flex items-end justify-between gap-3">
     <div class="text-4xl font-semibold tracking-[-0.04em]" style={`color:${accent}`}>{value}</div>

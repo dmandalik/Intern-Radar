@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { fade } from "svelte/transition";
   import { getFilters, getHealth, getJob, getJobs, getSettings, getSummary, postExport, postJobAction, postJobNotes } from "./api/client";
   import EvidenceDrawer from "./components/EvidenceDrawer.svelte";
   import EmptyState from "./components/EmptyState.svelte";
@@ -180,40 +181,49 @@
   {:else if error}
     <EmptyState title="Dashboard unavailable" message={error} />
   {:else}
-    {#if currentPage === "overview"}
-      <OverviewPage {summary} onSelectJob={handleSelectJob} onAction={handleAction} />
-    {:else if currentPage === "jobs"}
-      <JobsPage
-        {jobs}
-        total={jobsTotal}
-        {view}
-        filters={jobQuery}
-        options={filterOptions}
-        onFilterChange={handleFilterChange}
-        onSelectJob={handleSelectJob}
-        onAction={handleAction}
-        onViewChange={(next) => (view = next)}
-      />
-    {:else if currentPage === "hidden_gems"}
-      <HiddenGemsPage
-        jobs={hiddenGemJobs}
-        threshold={hiddenGemThreshold}
-        onThresholdChange={(value) => (hiddenGemThreshold = value)}
-        onSelectJob={handleSelectJob}
-        onAction={handleAction}
-      />
-    {:else if currentPage === "coming_soon"}
-      <ComingSoonPage jobs={comingSoonJobs} onSelectJob={handleSelectJob} onAction={handleAction} />
-    {:else if currentPage === "saved"}
-      <SavedPage jobs={savedJobs} onSelectJob={handleSelectJob} onAction={handleAction} />
-    {:else if currentPage === "review"}
-      <ReviewPage jobs={reviewJobs} onSelectJob={handleSelectJob} onAction={handleAction} />
-    {:else if currentPage === "settings"}
-      <SettingsPage {settings} />
-    {:else if currentPage === "export"}
-      <ExportPage busy={exportBusy} resultPaths={exportPaths} onExport={handleExport} />
-    {/if}
+    {#key currentPage}
+      <div class="page-shell" transition:fade={{ duration: 170 }}>
+        {#if currentPage === "overview"}
+          <OverviewPage {summary} onSelectJob={handleSelectJob} onAction={handleAction} onNavigate={navigate} />
+        {:else if currentPage === "jobs"}
+          <JobsPage
+            {jobs}
+            total={jobsTotal}
+            {view}
+            filters={jobQuery}
+            options={filterOptions}
+            onFilterChange={handleFilterChange}
+            onSelectJob={handleSelectJob}
+            onAction={handleAction}
+            onViewChange={(next) => (view = next)}
+          />
+        {:else if currentPage === "hidden_gems"}
+          <HiddenGemsPage
+            jobs={hiddenGemJobs}
+            threshold={hiddenGemThreshold}
+            onThresholdChange={(value) => (hiddenGemThreshold = value)}
+            onSelectJob={handleSelectJob}
+            onAction={handleAction}
+          />
+        {:else if currentPage === "coming_soon"}
+          <ComingSoonPage jobs={comingSoonJobs} onSelectJob={handleSelectJob} onAction={handleAction} />
+        {:else if currentPage === "saved"}
+          <SavedPage jobs={savedJobs} onSelectJob={handleSelectJob} onAction={handleAction} />
+        {:else if currentPage === "review"}
+          <ReviewPage jobs={reviewJobs} onSelectJob={handleSelectJob} onAction={handleAction} />
+        {:else if currentPage === "settings"}
+          <SettingsPage {settings} />
+        {:else if currentPage === "export"}
+          <ExportPage busy={exportBusy} resultPaths={exportPaths} onExport={handleExport} />
+        {/if}
+      </div>
+    {/key}
   {/if}
 </Layout>
 
-<EvidenceDrawer job={selectedJob} on:close={() => (selectedJob = null)} on:noteSave={(event) => handleNoteSave(event.detail.notes)} />
+<EvidenceDrawer
+  job={selectedJob}
+  on:close={() => (selectedJob = null)}
+  on:noteSave={(event) => handleNoteSave(event.detail.notes)}
+  on:action={(event) => handleAction(event.detail.jobId, event.detail.action)}
+/>
