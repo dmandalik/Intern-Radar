@@ -7,12 +7,14 @@
   export let activePack: string | null = null;
   export let lastScanAt: string | null = null;
   export let theme: "dusk" | "dawn" = "dusk";
+  export let scanBusy = false;
 
   let searchDraft = search;
 
   const dispatch = createEventDispatcher<{
     search: { value: string };
     themeToggle: void;
+    scan: void;
     export: void;
   }>();
 
@@ -50,8 +52,25 @@
         />
         <button class="ghost-button" type="submit">Search</button>
       </form>
+      <div class="glass-panel flex items-center gap-3 rounded-full px-3 py-2">
+        <div class="hidden text-right sm:block">
+          <div class="section-eyebrow">Live radar</div>
+          <div class="text-xs text-[var(--muted)]">
+            {scanBusy ? "Refreshing firms and signals…" : "Run a fresh scan from the command center"}
+          </div>
+        </div>
+        <button
+          class="radar-button min-w-[8.5rem]"
+          type="button"
+          disabled={scanBusy}
+          aria-busy={scanBusy}
+          on:click={() => dispatch("scan")}
+        >
+          {scanBusy ? "Scanning…" : "Run scan"}
+        </button>
+      </div>
       <ThemeToggle {theme} on:toggle={() => dispatch("themeToggle")} />
-      <button class="radar-button" on:click={() => dispatch("export")}>Export now</button>
+      <button class="ghost-button" type="button" on:click={() => dispatch("export")}>Export now</button>
     </div>
   </div>
 </header>

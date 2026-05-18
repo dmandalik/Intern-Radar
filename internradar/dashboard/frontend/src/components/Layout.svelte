@@ -9,10 +9,12 @@
   export let activePack: string | null = null;
   export let lastScanAt: string | null = null;
   export let theme: "dusk" | "dawn" = "dusk";
+  export let scanBusy = false;
 
   export let onNavigate: (page: PageId) => void;
   export let onSearch: (value: string) => void;
   export let onThemeToggle: () => void;
+  export let onScan: () => void;
   export let onExportNavigate: () => void;
 </script>
 
@@ -25,8 +27,10 @@
         {activePack}
         {lastScanAt}
         {theme}
+        {scanBusy}
         on:search={(event) => onSearch(event.detail.value)}
         on:themeToggle={onThemeToggle}
+        on:scan={onScan}
         on:export={onExportNavigate}
       />
       <main class="min-w-0 flex-1">

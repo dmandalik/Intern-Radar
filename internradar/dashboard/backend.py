@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from internradar.commands.scan import run_scan
 from internradar.commands.export import run_export
 from internradar.core.config import load_config, resolve_user_config_path
 from internradar.core.database import (
@@ -34,6 +35,36 @@ def ensure_dashboard_database(cwd: Path | None = None) -> None:
         raise DatabaseError(
             f"No local database found at {local_database_path(cwd)}. Run `internradar init` and `internradar scan` first.",
         )
+
+
+def run_dashboard_scan(
+    *,
+    pack: str | None = None,
+    max_firms: int | None = None,
+    company: str | None = None,
+    source: str | None = None,
+    cwd: Path | None = None,
+) -> dict[str, Any]:
+    """Run the full scan pipeline from the dashboard and return a compact summary."""
+    summary = run_scan(
+        pack=pack,
+        max_firms=max_firms,
+        company_query=company,
+        dry_run=False,
+        verbose=False,
+        source=source,
+        project_root=cwd,
+    )
+    return {
+        "pack": summary.pack,
+        "firms_checked": summary.firms_checked,
+        "sources_attempted": summary.sources_attempted,
+        "raw_jobs_found": summary.raw_jobs_found,
+        "normalized_jobs": summary.normalized_jobs,
+        "duplicates_merged": summary.duplicates_merged,
+        "jobs_saved": summary.jobs_saved,
+        "collector_errors": summary.collector_errors,
+    }
 
 
 def load_dashboard_jobs(

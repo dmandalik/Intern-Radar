@@ -150,6 +150,14 @@
     background: color-mix(in srgb, var(--surface) 84%, transparent);
   }
 
+  .ghost-button:disabled,
+  .radar-button:disabled {
+    cursor: wait;
+    opacity: 0.72;
+    transform: none;
+    box-shadow: none;
+  }
+
   .filter-chip {
     @apply inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs;
     border-color: var(--border);
