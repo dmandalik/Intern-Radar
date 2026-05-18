@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { fade } from "svelte/transition";
-  import { getFilters, getHealth, getJob, getJobs, getSettings, getSummary, postExport, postJobAction, postJobNotes } from "./api/client";
+  import { getFilters, getHealth, getJob, getJobs, getSettings, getSummary, postExport, postJobAction, postJobNotes, postScan } from "./api/client";
   import EvidenceDrawer from "./components/EvidenceDrawer.svelte";
   import EmptyState from "./components/EmptyState.svelte";
   import Layout from "./components/Layout.svelte";
@@ -39,6 +39,7 @@
   let view: "cards" | "table" = "cards";
   let hiddenGemThreshold = hiddenGemDefaultThreshold;
   let exportBusy = false;
+  let scanBusy = false;
   let exportPaths: string[] = [];
 
   onMount(async () => {
@@ -154,6 +155,24 @@
     }
   }
 
+  async function handleScan(): Promise<void> {
+    if (scanBusy) return;
+    scanBusy = true;
+    error = "";
+    try {
+      await postScan({
+        pack: summary?.pack ?? settings?.active_pack ?? undefined,
+      });
+      selectedJob = null;
+      await refreshAll();
+      currentPage = "overview";
+    } catch (caught) {
+      error = caught instanceof Error ? caught.message : "Unable to run scan";
+    } finally {
+      scanBusy = false;
+    }
+  }
+
   function navigate(page: PageId): void {
     currentPage = page;
   }
@@ -171,9 +190,11 @@
   activePack={summary?.pack ?? settings?.active_pack ?? null}
   lastScanAt={summary?.last_scan_at ?? null}
   {theme}
+  {scanBusy}
   onNavigate={navigate}
   onSearch={handleSearch}
   onThemeToggle={toggleTheme}
+  onScan={handleScan}
   onExportNavigate={() => navigate("export")}
 >
   {#if loading}

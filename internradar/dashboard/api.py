@@ -8,7 +8,9 @@ from typing import Any
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse
 
+from internradar.commands.scan import ScanCommandError
 from internradar.core.errors import DatabaseError
+from internradar.core.pack_loader import PackLoaderError, PackValidationError
 from internradar.dashboard.backend import (
     create_dashboard_export,
     filter_dashboard_jobs,
@@ -20,8 +22,10 @@ from internradar.dashboard.backend import (
     paginate_jobs,
     persist_dashboard_action,
     persist_dashboard_notes,
+    run_dashboard_scan,
     sort_dashboard_jobs,
 )
+from internradar.review.overrides import OverrideError
 from internradar.dashboard.server import dashboard_assets_dir, dashboard_assets_ready
 
 
@@ -179,6 +183,27 @@ def create_dashboard_app(
         except (DatabaseError, ValueError) as exc:
             raise HTTPException(status_code=503, detail=str(exc)) from exc
         return {"ok": True, "paths": [str(path) for path in created]}
+
+    @app.post("/api/scan")
+    def scan(payload: dict[str, Any]) -> dict[str, Any]:
+        try:
+            result = run_dashboard_scan(
+                pack=_optional_string(payload.get("pack")),
+                max_firms=int(payload["max_firms"]) if payload.get("max_firms") is not None else None,
+                company=_optional_string(payload.get("company")),
+                source=_optional_string(payload.get("source")),
+                cwd=cwd,
+            )
+        except (
+            DatabaseError,
+            OverrideError,
+            PackLoaderError,
+            PackValidationError,
+            ScanCommandError,
+            ValueError,
+        ) as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        return {"ok": True, "summary": result}
 
     if serve_frontend:
         _mount_frontend_routes(app)

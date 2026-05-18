@@ -66,3 +66,10 @@ export function postExport(payload: Record<string, unknown>): Promise<{ ok: bool
     body: JSON.stringify(payload),
   });
 }
+
+export function postScan(payload: Record<string, unknown>): Promise<{ ok: boolean; summary: Record<string, unknown> }> {
+  return request("/scan", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}

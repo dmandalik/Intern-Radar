@@ -4,6 +4,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 try:
     from fastapi.testclient import TestClient
@@ -11,6 +12,7 @@ except ModuleNotFoundError:  # pragma: no cover - environment-specific dependenc
     TestClient = None
 
 from internradar.core.database import complete_scan_run, create_scan_run, initialize_database, load_user_actions, upsert_jobs
+from internradar.core.errors import DatabaseError
 from internradar.core.models import ClassifiedRole, EligibilityInfo, Job, JobScores, JobStatusInfo
 if TestClient is not None:
     from internradar.dashboard.api import create_dashboard_app
@@ -218,6 +220,45 @@ class TestDashboardApi(unittest.TestCase):
         self.assertTrue(path.exists())
         payload = json.loads(path.read_text(encoding="utf-8"))
         self.assertEqual(payload["count"], 1)
+
+    def test_scan_endpoint_runs_scan_and_returns_summary(self) -> None:
+        app = create_dashboard_app(cwd=self.cwd, serve_frontend=False)
+        client = TestClient(app)
+
+        with patch("internradar.dashboard.api.run_dashboard_scan") as mocked_run_scan:
+            mocked_run_scan.return_value = {
+                "pack": "quant_engineering",
+                "firms_checked": 10,
+                "sources_attempted": 12,
+                "raw_jobs_found": 18,
+                "normalized_jobs": 16,
+                "duplicates_merged": 2,
+                "jobs_saved": 14,
+                "collector_errors": 1,
+            }
+            response = client.post("/api/scan", json={"pack": "quant_engineering", "max_firms": 10})
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["ok"], True)
+        self.assertEqual(payload["summary"]["jobs_saved"], 14)
+        mocked_run_scan.assert_called_once_with(
+            pack="quant_engineering",
+            max_firms=10,
+            company=None,
+            source=None,
+            cwd=self.cwd,
+        )
+
+    def test_scan_endpoint_returns_helpful_error_when_scan_fails(self) -> None:
+        app = create_dashboard_app(cwd=self.cwd, serve_frontend=False)
+        client = TestClient(app)
+
+        with patch("internradar.dashboard.api.run_dashboard_scan", side_effect=DatabaseError("No database found")):
+            response = client.post("/api/scan", json={"pack": "quant_engineering"})
+
+        self.assertEqual(response.status_code, 503)
+        self.assertIn("No database found", response.json()["detail"])
 
     def test_missing_db_returns_helpful_error(self) -> None:
         app = create_dashboard_app(cwd=self.cwd, serve_frontend=False)
