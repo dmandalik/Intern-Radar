@@ -55,6 +55,28 @@ GENERIC_INTERNSHIP_PAGE_HTML = """
 </html>
 """
 
+GENERIC_SLOGAN_PAGE_HTML = """
+<html>
+  <head><title>Join a community guided by mathematical rigor, engineering excellence, and the belief that the best work can only be done together.</title></head>
+  <body>
+    <h1>Join a community guided by mathematical rigor, engineering excellence, and the belief that the best work can only be done together.</h1>
+    <p>Students and graduates can learn more about our culture and programs here.</p>
+    <a href="/careers/software-engineer-internship-2027/apply">Apply Now</a>
+  </body>
+</html>
+"""
+
+SPECIFIC_JOB_WITH_HOMEPAGE_APPLY_HTML = """
+<html>
+  <head><title>Software Engineer Intern, Trading Infrastructure</title></head>
+  <body>
+    <h1>Software Engineer Intern, Trading Infrastructure</h1>
+    <p>Build exchange connectivity systems in C++ and Python for Summer 2027.</p>
+    <a href="https://www.imc.com/">Apply Now</a>
+  </body>
+</html>
+"""
+
 ROOT_WITH_GENERIC_LINKS_HTML = """
 <html>
   <body>
@@ -360,6 +382,55 @@ class TestCustomPageCollector(unittest.TestCase):
         jobs = collector.collect(company, config={})
 
         self.assertEqual(jobs, [])
+
+    def test_collector_ignores_generic_slogan_page_even_with_apply_link(self) -> None:
+        client, _ = self._client_for_pages(
+            {
+                "https://example.com/careers": httpx.Response(
+                    200,
+                    text='<html><body><a href="/careers/students-graduates">Students & Graduates</a></body></html>',
+                    headers={"content-type": "text/html"},
+                ),
+                "https://example.com/careers/students-graduates": httpx.Response(
+                    200,
+                    text=GENERIC_SLOGAN_PAGE_HTML,
+                    headers={"content-type": "text/html"},
+                ),
+            },
+        )
+        collector = CustomPageCollector(client=client)
+        company = Company(id="company-1", name="Example", careers_url="https://example.com/careers")
+
+        jobs = collector.collect(company, config={})
+
+        self.assertEqual(jobs, [])
+
+    def test_collector_falls_back_to_specific_page_url_when_apply_link_is_homepage(self) -> None:
+        client, _ = self._client_for_pages(
+            {
+                "https://example.com/careers": httpx.Response(
+                    200,
+                    text='<html><body><a href="/careers/software-engineer-internship-2027">Software Engineer Intern</a></body></html>',
+                    headers={"content-type": "text/html"},
+                ),
+                "https://example.com/careers/software-engineer-internship-2027": httpx.Response(
+                    200,
+                    text=SPECIFIC_JOB_WITH_HOMEPAGE_APPLY_HTML,
+                    headers={"content-type": "text/html"},
+                ),
+            },
+        )
+        collector = CustomPageCollector(client=client)
+        company = Company(id="company-1", name="Example", careers_url="https://example.com/careers")
+
+        jobs = collector.collect(company, config={})
+
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0].title, "Software Engineer Intern, Trading Infrastructure")
+        self.assertEqual(
+            jobs[0].apply_url,
+            "https://example.com/careers/software-engineer-internship-2027",
+        )
 
     def test_registry_defaults_include_custom_page_collector(self) -> None:
         registry = CollectorRegistry.with_defaults()
