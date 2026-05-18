@@ -127,12 +127,57 @@ EXACT_GENERIC_TITLES = {
     "early careers",
     "programs",
 }
+GENERIC_SECTION_SEGMENTS = {
+    "careers",
+    "career",
+    "jobs",
+    "job",
+    "internship",
+    "internships",
+    "students-graduates",
+    "students-and-graduates",
+    "students_graduates",
+    "student-opportunities",
+    "studentopportunities",
+    "graduates",
+    "early-careers",
+    "early-career",
+    "how-we-hire",
+    "recruitment-process",
+    "benefits",
+    "life-at",
+    "talent-community",
+    "programs",
+}
+MARKETING_TITLE_PREFIXES = (
+    "join ",
+    "discover ",
+    "explore ",
+    "learn ",
+    "welcome ",
+    "work where",
+    "build your future",
+)
+GENERIC_APPLY_PATH_SEGMENTS = {
+    "",
+    "apply",
+    "careers",
+    "career",
+    "jobs",
+    "job",
+    "students-graduates",
+    "students-and-graduates",
+    "internships",
+}
 DIRECT_JOB_URL_PATTERNS = (
     "/jobs/",
     "/job/",
     "/positions/",
     "/position/",
     "/apply",
+)
+DIRECT_JOB_URL_REGEX = re.compile(
+    r"/(?:jobs?|positions?)/[a-z0-9][a-z0-9\-_/]*(?:\d{4,}|intern|engineer|developer|analyst|research|trader)",
 )
 JOB_SIGNALS = (
     "intern",
@@ -388,6 +433,8 @@ class CustomPageCollector:
 
         description_raw = page.text or None
         apply_url = self._detect_apply_url(page.soup, page.url)
+        if apply_url is None and self._looks_like_specific_destination(page.url):
+            apply_url = page.url
         location_raw = self._detect_location(page.text)
         department = self._detect_department(page.text)
         if not self._is_plausible_job_page(
@@ -465,7 +512,9 @@ class CustomPageCollector:
             text = self._clean_text(anchor.get_text(" ", strip=True))
             haystack = " ".join(piece for piece in [text, href] if piece).casefold()
             if any(signal in haystack for signal in APPLY_SIGNALS):
-                return urljoin(page_url, href).split("#", 1)[0]
+                candidate = urljoin(page_url, href).split("#", 1)[0]
+                if self._looks_like_specific_destination(candidate):
+                    return candidate
 
         return None
 
@@ -483,6 +532,8 @@ class CustomPageCollector:
         return None
 
     def _is_specific_candidate(self, url: str, matched_keywords: list[str]) -> bool:
+        if self._is_generic_section_url(url):
+            return False
         if self._looks_like_direct_job_url(url):
             return True
         return any(keyword not in GENERIC_DISCOVERY_KEYWORDS for keyword in matched_keywords)
@@ -502,37 +553,82 @@ class CustomPageCollector:
             return False
         if depth == 0 and not self._looks_like_direct_job_url(page_url):
             return False
-        if apply_url is None:
+        if apply_url is None and not self._looks_like_specific_destination(page_url):
             return False
 
         title_has_role_signal = any(signal in lowered_title for signal in SPECIFIC_ROLE_SIGNALS)
         anchor_has_role_signal = any(
             signal in (anchor_text or "").casefold() for signal in SPECIFIC_ROLE_SIGNALS
         )
-        if not title_has_role_signal and not anchor_has_role_signal and not self._looks_like_direct_job_url(page_url):
+        if not title_has_role_signal and not anchor_has_role_signal and not self._looks_like_specific_destination(page_url):
             return False
 
         non_generic_matches = [keyword for keyword in matched_keywords if keyword not in GENERIC_DISCOVERY_KEYWORDS]
-        if not non_generic_matches and not self._looks_like_direct_job_url(page_url):
+        if not non_generic_matches and not self._looks_like_specific_destination(page_url):
             return False
 
         return True
 
     def _looks_like_direct_job_url(self, url: str) -> bool:
         lowered = url.casefold()
-        return any(pattern in lowered for pattern in DIRECT_JOB_URL_PATTERNS)
+        if any(pattern in lowered for pattern in DIRECT_JOB_URL_PATTERNS):
+            return True
+        return bool(DIRECT_JOB_URL_REGEX.search(lowered))
+
+    def _looks_like_specific_destination(self, url: str) -> bool:
+        if self._looks_like_direct_job_url(url):
+            return True
+        if self._is_generic_section_url(url):
+            return False
+
+        path = urlparse(url).path.strip("/")
+        if not path:
+            return False
+
+        segments = [segment for segment in path.casefold().split("/") if segment]
+        if not segments:
+            return False
+
+        last_segment = segments[-1]
+        if last_segment in GENERIC_APPLY_PATH_SEGMENTS:
+            return False
+        return any(signal in last_segment for signal in SPECIFIC_ROLE_SIGNALS) or bool(re.search(r"\d{4,}", last_segment))
+
+    def _is_generic_section_url(self, url: str) -> bool:
+        path = urlparse(url).path.strip("/")
+        if not path:
+            return True
+
+        segments = [segment for segment in path.casefold().split("/") if segment]
+        if not segments:
+            return True
+
+        last_segment = segments[-1]
+        if last_segment in GENERIC_SECTION_SEGMENTS:
+            return True
+
+        return False
 
     def _is_generic_title(self, lowered_title: str) -> bool:
         normalized = lowered_title.strip(" -|:")
-        return normalized in EXACT_GENERIC_TITLES or any(
-            signal in lowered_title for signal in GENERIC_TITLE_SIGNALS
-        )
+        word_count = len([piece for piece in re.split(r"\s+", normalized) if piece])
+        if normalized in EXACT_GENERIC_TITLES:
+            return True
+        if any(signal in lowered_title for signal in GENERIC_TITLE_SIGNALS):
+            return True
+        if any(normalized.startswith(prefix) for prefix in MARKETING_TITLE_PREFIXES):
+            return True
+        if word_count >= 11 and not any(signal in lowered_title for signal in SPECIFIC_ROLE_SIGNALS):
+            return True
+        return False
 
     def _title_specificity_score(self, title: str) -> tuple[int, int, int]:
         lowered = title.casefold()
         role_hits = sum(1 for signal in SPECIFIC_ROLE_SIGNALS if signal in lowered)
         generic_penalty = sum(1 for signal in GENERIC_TITLE_SIGNALS if signal in lowered)
-        return (role_hits, -generic_penalty, -len(lowered))
+        word_count = len([piece for piece in re.split(r"\s+", lowered) if piece])
+        long_penalty = 1 if word_count >= 11 else 0
+        return (role_hits, -generic_penalty, -long_penalty, -len(lowered))
 
     def _clean_text(self, value: str) -> str:
         return re.sub(r"\s+", " ", value).strip()

@@ -76,6 +76,20 @@ internradar export --format xlsx
 internradar export --format html
 ```
 
+For a one-command local startup, use:
+
+```bash
+./scripts/start_local.sh
+```
+
+Useful options:
+
+```bash
+./scripts/start_local.sh --scan
+./scripts/start_local.sh --pack quant_engineering --max-firms 25
+./scripts/start_local.sh --open-browser
+```
+
 Real scans use current public job pages and ATS boards, so results vary based on what is live when you run them.
 
 ## Example Commands
