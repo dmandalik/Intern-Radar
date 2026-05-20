@@ -297,32 +297,43 @@ class CustomPageCollector:
             cache: dict[str, ResolvedPage] = {}
             root_page = self._load_page(client, careers_url, cache=cache, strict=True)
             pages_fetched = 1
+            pages_to_process = [root_page]
+            discovered_pages, discovered_fetches = self._discover_seed_pages(
+                client,
+                root_page,
+                cache=cache,
+                pages_remaining=max_pages - pages_fetched,
+                polite_delay_seconds=polite_delay_seconds,
+            )
+            pages_fetched += discovered_fetches
+            pages_to_process.extend(discovered_pages)
             jobs: list[RawJob] = []
             seen_job_keys: set[tuple[str, str]] = set()
 
-            root_candidates = self._extract_candidates_from_page(root_page, current_depth=0)
-            for candidate in self._dedupe_candidates(root_candidates):
-                verified, extra_fetches = self._verify_candidate(
-                    client,
-                    candidate,
-                    parent_page=root_page,
-                    cache=cache,
-                    max_depth=max_depth,
-                    current_depth=0,
-                    pages_remaining=max_pages - pages_fetched,
-                    polite_delay_seconds=polite_delay_seconds,
-                )
-                pages_fetched += extra_fetches
-                if verified is None:
-                    continue
-                raw_job = self._candidate_to_raw_job(company, verified)
-                key = (raw_job.title.casefold(), raw_job.url)
-                if key in seen_job_keys:
-                    continue
-                seen_job_keys.add(key)
-                jobs.append(raw_job)
-                if pages_fetched >= max_pages:
-                    break
+            for page in pages_to_process:
+                page_candidates = self._extract_candidates_from_page(page, current_depth=0)
+                for candidate in self._dedupe_candidates(page_candidates):
+                    verified, extra_fetches = self._verify_candidate(
+                        client,
+                        candidate,
+                        parent_page=page,
+                        cache=cache,
+                        max_depth=max_depth,
+                        current_depth=0,
+                        pages_remaining=max_pages - pages_fetched,
+                        polite_delay_seconds=polite_delay_seconds,
+                    )
+                    pages_fetched += extra_fetches
+                    if verified is None:
+                        continue
+                    raw_job = self._candidate_to_raw_job(company, verified)
+                    key = (raw_job.title.casefold(), raw_job.url)
+                    if key in seen_job_keys:
+                        continue
+                    seen_job_keys.add(key)
+                    jobs.append(raw_job)
+                    if pages_fetched >= max_pages:
+                        break
 
             return jobs
         finally:
@@ -398,6 +409,8 @@ class CustomPageCollector:
             return self._extract_hrt_candidates(page, current_depth=current_depth)
         if adapter_name == "gresearch":
             return self._extract_gresearch_candidates(page, current_depth=current_depth)
+        if adapter_name == "imc":
+            return self._extract_imc_candidates(page, current_depth=current_depth)
 
         classification = self._classify_page(page)
         if classification == "job_detail":
@@ -409,6 +422,37 @@ class CustomPageCollector:
         if classification == "job_listing":
             return self._extract_generic_listing_candidates(page, current_depth=current_depth)
         return []
+
+    def _discover_seed_pages(
+        self,
+        client: httpx.Client,
+        root_page: ResolvedPage,
+        *,
+        cache: dict[str, ResolvedPage],
+        pages_remaining: int,
+        polite_delay_seconds: float,
+    ) -> tuple[list[ResolvedPage], int]:
+        if pages_remaining <= 0:
+            return [], 0
+
+        adapter_name = self._adapter_name_for_url(root_page.final_url)
+        if adapter_name != "imc":
+            return [], 0
+        if "/search-careers" in urlparse(root_page.final_url).path.casefold():
+            return [], 0
+
+        search_url = self._find_imc_search_careers_url(root_page)
+        if not search_url:
+            return [], 0
+
+        if polite_delay_seconds > 0:
+            self._sleeper(polite_delay_seconds)
+
+        try:
+            page = self._load_page(client, search_url, cache=cache, strict=False)
+        except (InvalidConfigError, NetworkError, ParseError):
+            return [], 0
+        return [page], 1
 
     def _verify_candidate(
         self,
@@ -575,6 +619,35 @@ class CustomPageCollector:
             return [candidate] if candidate is not None else []
         return []
 
+    def _extract_imc_candidates(
+        self,
+        page: ResolvedPage,
+        *,
+        current_depth: int,
+    ) -> list[ExtractedRoleCandidate]:
+        del current_depth
+        path = urlparse(page.final_url).path.casefold()
+        if "/search-careers" in path:
+            return self._extract_listing_candidates_from_blocks(
+                page,
+                current_depth=0,
+                adapter_name="imc",
+                extracted_from="adapter",
+                preferred_detail_segment="/careers/jobs/",
+            )
+        if "/careers/jobs/" in path:
+            candidate = self._extract_generic_detail_candidate(page, adapter_name="imc", extracted_from="adapter")
+            return [candidate] if candidate is not None else []
+        if "/careers/students-graduates/internships/" in path and self._find_imc_job_links(page.soup, page.final_url):
+            return self._extract_listing_candidates_from_blocks(
+                page,
+                current_depth=0,
+                adapter_name="imc",
+                extracted_from="adapter",
+                preferred_detail_segment="/careers/jobs/",
+            )
+        return []
+
     def _extract_structured_data_candidates(self, page: ResolvedPage) -> list[ExtractedRoleCandidate]:
         candidates: list[ExtractedRoleCandidate] = []
         for payload in page.json_ld_job_postings:
@@ -625,14 +698,15 @@ class CustomPageCollector:
             return None
 
         description = self._extract_detail_description(page.soup)
+        detail_text = self._clean_text(f"{description or ''} {page.visible_text}")
         if description is None:
             description = page.visible_text
-        location = self._detect_location(description or page.visible_text)
+        location = self._detect_location(detail_text)
         apply_url = self._detect_apply_url(page.soup, page.final_url, page.final_url)
         if apply_url and self._is_generic_destination(apply_url):
             apply_url = None
-        status_hint, status_evidence = self._detect_status_hint(description or page.visible_text)
-        matched_keywords = self._matched_keywords(title, description or page.visible_text)
+        status_hint, status_evidence = self._detect_status_hint(detail_text)
+        matched_keywords = self._matched_keywords(title, detail_text)
         if not matched_keywords and not self._looks_like_direct_detail_url(page.final_url):
             return None
 
@@ -642,9 +716,9 @@ class CustomPageCollector:
             apply_url=apply_url,
             description=description,
             location_raw=location,
-            season_hint=self._detect_season_hint(description or page.visible_text),
+            season_hint=self._detect_season_hint(detail_text),
             status_hint=status_hint,
-            block_text=description or page.visible_text,
+            block_text=detail_text,
             evidence=["specific detail page"],
             adapter_name=adapter_name,
             confidence=0.9 if apply_url else 0.8,
@@ -778,6 +852,29 @@ class CustomPageCollector:
                 ),
             )
         return candidates
+
+    def _find_imc_search_careers_url(self, page: ResolvedPage) -> str | None:
+        for anchor in page.soup.find_all("a", href=True):
+            href = self._clean_url(anchor.get("href"), page.final_url)
+            if "/search-careers" in urlparse(href).path.casefold():
+                return href
+            text = self._clean_text(anchor.get_text(" ", strip=True)).casefold()
+            if text == "search careers" and href:
+                return href
+        parsed = urlparse(page.final_url)
+        segments = [segment for segment in parsed.path.split("/") if segment]
+        if not segments:
+            return f"{parsed.scheme}://{parsed.netloc}/search-careers"
+        region = segments[0]
+        return f"{parsed.scheme}://{parsed.netloc}/{region}/search-careers"
+
+    def _find_imc_job_links(self, soup: BeautifulSoup, page_url: str) -> list[str]:
+        links: list[str] = []
+        for anchor in soup.find_all("a", href=True):
+            href = self._clean_url(anchor.get("href"), page_url)
+            if "/careers/jobs/" in urlparse(href).path.casefold():
+                links.append(href)
+        return self._unique_strings(links)
 
     def _classify_page(self, page: ResolvedPage) -> PageClassification:
         if page.json_ld_job_postings:
@@ -1310,6 +1407,8 @@ class CustomPageCollector:
             return "hrt"
         if "gresearch.com" in netloc:
             return "gresearch"
+        if "imc.com" in netloc:
+            return "imc"
         return None
 
     def _short_text_lines(self, text: str) -> list[str]:

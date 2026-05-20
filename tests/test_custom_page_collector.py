@@ -304,6 +304,76 @@ class TestCustomPageCollector(unittest.TestCase):
 
         self.assertEqual(status.status, "coming_soon")
 
+    def test_imc_root_discovers_search_careers_and_emits_specific_role_pages(self) -> None:
+        root_html = self._fixture_text("imc_careers_root.html")
+        search_html = self._fixture_text("imc_search_careers.html")
+        software_detail_html = self._fixture_text("imc_software_engineer_intern.html")
+        quant_detail_html = self._fixture_text("imc_quantitative_developer_intern.html")
+        client, calls = self._client_for_pages(
+            {
+                "https://www.imc.com/us/careers/": httpx.Response(200, text=root_html, headers={"content-type": "text/html"}),
+                "https://www.imc.com/us/search-careers": httpx.Response(200, text=search_html, headers={"content-type": "text/html"}),
+                "https://www.imc.com/us/careers/jobs/1234567890": httpx.Response(200, text=software_detail_html, headers={"content-type": "text/html"}),
+                "https://www.imc.com/us/careers/jobs/2234567890": httpx.Response(200, text=quant_detail_html, headers={"content-type": "text/html"}),
+            },
+        )
+        collector = CustomPageCollector(client=client)
+        company = Company(id="imc", name="IMC Trading", careers_url="https://www.imc.com/us/careers/")
+
+        jobs = collector.collect(company, config={})
+        by_title = {job.title: job for job in jobs}
+
+        self.assertEqual(
+            calls,
+            [
+                "https://www.imc.com/us/careers/",
+                "https://www.imc.com/us/search-careers",
+                "https://www.imc.com/us/careers/jobs/1234567890",
+                "https://www.imc.com/us/careers/jobs/2234567890",
+            ],
+        )
+        self.assertIn("Software Engineer Intern", by_title)
+        self.assertIn("Quantitative Developer Intern", by_title)
+        self.assertNotIn("HOW WE HIRE", by_title)
+        self.assertTrue(all(job.url.startswith("https://www.imc.com/us/careers/jobs/") for job in jobs))
+        self.assertEqual(
+            by_title["Software Engineer Intern"].apply_url,
+            "https://careers.imc.com/apply/software-engineer-intern-123",
+        )
+        self.assertEqual(by_title["Software Engineer Intern"].location_raw, "Amsterdam")
+
+    def test_imc_recruitment_process_page_never_emits_how_we_hire_and_recovers_to_specific_jobs(self) -> None:
+        recruitment_html = self._fixture_text("imc_recruitment_process.html")
+        search_html = self._fixture_text("imc_search_careers.html")
+        software_detail_html = self._fixture_text("imc_software_engineer_intern.html")
+        quant_detail_html = self._fixture_text("imc_quantitative_developer_intern.html")
+        client, _ = self._client_for_pages(
+            {
+                "https://www.imc.com/us/careers/recruitment-process/": httpx.Response(
+                    200,
+                    text=recruitment_html,
+                    headers={"content-type": "text/html"},
+                ),
+                "https://www.imc.com/us/search-careers": httpx.Response(200, text=search_html, headers={"content-type": "text/html"}),
+                "https://www.imc.com/us/careers/jobs/1234567890": httpx.Response(200, text=software_detail_html, headers={"content-type": "text/html"}),
+                "https://www.imc.com/us/careers/jobs/2234567890": httpx.Response(200, text=quant_detail_html, headers={"content-type": "text/html"}),
+            },
+        )
+        collector = CustomPageCollector(client=client)
+        company = Company(
+            id="imc",
+            name="IMC Trading",
+            careers_url="https://www.imc.com/us/careers/recruitment-process/",
+        )
+
+        jobs = collector.collect(company, config={})
+        titles = [job.title for job in jobs]
+
+        self.assertNotIn("HOW WE HIRE", titles)
+        self.assertNotIn("Recruitment process", titles)
+        self.assertIn("Software Engineer Intern", titles)
+        self.assertTrue(all("/careers/jobs/" in job.url for job in jobs))
+
     def test_gresearch_engineering_page_is_not_emitted_as_a_job(self) -> None:
         engineering_html = self._fixture_text("gresearch_engineering.html")
         client, _ = self._client_for_pages(
