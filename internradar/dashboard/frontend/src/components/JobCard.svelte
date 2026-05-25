@@ -86,6 +86,10 @@
     {#if quickAction}
       <button class="ghost-button" on:click={() => dispatch("action", { jobId: job.id, action: quickAction.action })}>{quickAction.label}</button>
     {/if}
-    <a class="radar-button" href={job.apply_url} target="_blank" rel="noreferrer">Open apply link</a>
+    {#if job.apply_url}
+      <a class="radar-button" href={job.apply_url} target="_blank" rel="noreferrer">Open apply link</a>
+    {:else}
+      <a class="radar-button" href={job.source_url} target="_blank" rel="noreferrer">Open source page</a>
+    {/if}
   </div>
 </article>

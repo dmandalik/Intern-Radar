@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 from typing import Iterable
+from urllib.parse import urlparse
 
 from internradar.core.models import Job
 from internradar.verification.page_hash import hash_job_content
@@ -83,9 +84,10 @@ def _duplicate_reasons(left: Job, right: Job) -> list[str]:
         return []
 
     reasons: list[str] = []
+    title_similarity = _title_similarity(left.title, right.title)
     if _canonical_equals(left.apply_url, right.apply_url):
         reasons.append("same canonical apply URL")
-    if _canonical_equals(left.source_url, right.source_url):
+    if _canonical_equals(left.source_url, right.source_url) and title_similarity > 92:
         reasons.append("same canonical source URL")
 
     left_ats_key = _extract_ats_job_key(left)
@@ -93,7 +95,6 @@ def _duplicate_reasons(left: Job, right: Job) -> list[str]:
     if left_ats_key and left_ats_key == right_ats_key:
         reasons.append("same ATS job ID")
 
-    title_similarity = _title_similarity(left.title, right.title)
     same_season_year = left.season == right.season and left.year == right.year and left.year is not None
     if title_similarity > 92:
         reasons.append("same company with highly similar title")
@@ -144,8 +145,8 @@ def _merge_group(group: DuplicateGroup) -> Job:
     best_role = max((job.role for job in jobs), key=lambda role: role.confidence)
     best_eligibility = max((job.eligibility for job in jobs), key=lambda eligibility: eligibility.confidence)
 
-    apply_url = next((job.apply_url for job in jobs if job.apply_url), primary.apply_url)
-    source_url = next((job.source_url for job in jobs if job.source_url), primary.source_url)
+    apply_url = _select_preferred_url((job.apply_url for job in jobs), primary.apply_url, prefer_apply=True)
+    source_url = _select_preferred_url((job.source_url for job in jobs), primary.source_url, prefer_apply=False)
     description = richest_description or primary.description
 
     merged = primary.model_copy(
@@ -196,6 +197,37 @@ def _search_pattern(text: str, pattern: str) -> str | None:
 
 def _title_similarity(left: str, right: str) -> float:
     return SequenceMatcher(None, left.casefold(), right.casefold()).ratio() * 100
+
+
+def _select_preferred_url(candidates: Iterable[str | None], fallback: str | None, *, prefer_apply: bool) -> str:
+    urls = [url for url in candidates if url]
+    if fallback:
+        urls.append(fallback)
+    if not urls:
+        return ""
+    return max(urls, key=lambda url: _url_specificity_score(url, prefer_apply=prefer_apply))
+
+
+def _url_specificity_score(url: str, *, prefer_apply: bool) -> tuple[int, int, int]:
+    normalized = canonicalize_url(url)
+    if not normalized:
+        return (0, 0, 0)
+    path = urlparse(normalized).path.casefold()
+    segments = [segment for segment in path.split("/") if segment]
+    direct_detail = int(any(pattern in path for pattern in ("/jobs/", "/job/", "/positions/", "/vacancies/", "/hrt-job/")))
+    explicit_apply = int(path.endswith("/apply") or "/apply/" in path or "/application" in path)
+    generic_listing = int(
+        path in {"", "/", "/careers", "/search-careers", "/us", "/ap", "/eu"}
+        or path.endswith("/search-careers")
+        or path.endswith("/careers")
+        or path.endswith("/students-graduates/internships")
+        or path.endswith("/recruitment-process")
+    )
+    return (
+        explicit_apply if prefer_apply else direct_detail,
+        0 if generic_listing else 1,
+        len(segments),
+    )
 
 
 def _dedupe_preserve_order(values: Iterable[str]) -> list[str]:

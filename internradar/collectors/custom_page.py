@@ -628,24 +628,26 @@ class CustomPageCollector:
         del current_depth
         path = urlparse(page.final_url).path.casefold()
         if "/search-careers" in path:
-            return self._extract_listing_candidates_from_blocks(
+            candidates = self._extract_listing_candidates_from_blocks(
                 page,
                 current_depth=0,
                 adapter_name="imc",
                 extracted_from="adapter",
                 preferred_detail_segment="/careers/jobs/",
             )
+            return self._assign_imc_detail_links(page, candidates)
         if "/careers/jobs/" in path:
             candidate = self._extract_generic_detail_candidate(page, adapter_name="imc", extracted_from="adapter")
             return [candidate] if candidate is not None else []
         if "/careers/students-graduates/internships/" in path and self._find_imc_job_links(page.soup, page.final_url):
-            return self._extract_listing_candidates_from_blocks(
+            candidates = self._extract_listing_candidates_from_blocks(
                 page,
                 current_depth=0,
                 adapter_name="imc",
                 extracted_from="adapter",
                 preferred_detail_segment="/careers/jobs/",
             )
+            return self._assign_imc_detail_links(page, candidates)
         return []
 
     def _extract_structured_data_candidates(self, page: ResolvedPage) -> list[ExtractedRoleCandidate]:
@@ -869,12 +871,60 @@ class CustomPageCollector:
         return f"{parsed.scheme}://{parsed.netloc}/{region}/search-careers"
 
     def _find_imc_job_links(self, soup: BeautifulSoup, page_url: str) -> list[str]:
-        links: list[str] = []
+        return [href for href, _ in self._find_imc_job_anchors(soup, page_url)]
+
+    def _find_imc_job_anchors(self, soup: BeautifulSoup, page_url: str) -> list[tuple[str, str]]:
+        anchors: list[tuple[str, str]] = []
+        seen: set[str] = set()
         for anchor in soup.find_all("a", href=True):
             href = self._clean_url(anchor.get("href"), page_url)
-            if "/careers/jobs/" in urlparse(href).path.casefold():
-                links.append(href)
-        return self._unique_strings(links)
+            path = urlparse(href).path.casefold()
+            if "/careers/jobs/" not in path or path.endswith("/apply"):
+                continue
+            if href in seen:
+                continue
+            seen.add(href)
+            anchors.append((href, self._clean_text(anchor.get_text(" ", strip=True))))
+        return anchors
+
+    def _assign_imc_detail_links(
+        self,
+        page: ResolvedPage,
+        candidates: list[ExtractedRoleCandidate],
+    ) -> list[ExtractedRoleCandidate]:
+        job_anchors = self._find_imc_job_anchors(page.soup, page.final_url)
+        if not job_anchors:
+            return candidates
+
+        remaining = list(job_anchors)
+        assigned: list[ExtractedRoleCandidate] = []
+        for candidate in candidates:
+            if candidate.source_url != page.final_url:
+                assigned.append(candidate)
+                continue
+
+            matched_index = -1
+            candidate_lower = candidate.title.casefold()
+            for index, (_, anchor_text) in enumerate(remaining):
+                if candidate_lower and candidate_lower in anchor_text.casefold():
+                    matched_index = index
+                    break
+            if matched_index == -1 and remaining:
+                matched_index = 0
+
+            if matched_index >= 0:
+                matched_url, matched_text = remaining.pop(matched_index)
+                assigned.append(
+                    self._candidate_with_updates(
+                        candidate,
+                        source_url=matched_url,
+                        requested_url=matched_url,
+                        block_anchor_text=matched_text or candidate.block_anchor_text,
+                    ),
+                )
+            else:
+                assigned.append(candidate)
+        return assigned
 
     def _classify_page(self, page: ResolvedPage) -> PageClassification:
         if page.json_ld_job_postings:

@@ -61,11 +61,29 @@ class TestDuplicateDetector(unittest.TestCase):
 
     def test_same_source_url_merges(self) -> None:
         jobs = [
-            self._job(source_url="https://example.com/jobs/1?utm_source=x"),
-            self._job(source_url="https://example.com/jobs/1"),
+            self._job(source_url="https://example.com/jobs/1?utm_source=x", title="Software Engineer Intern"),
+            self._job(source_url="https://example.com/jobs/1", title="Software Engineer Intern"),
         ]
 
         self.assertEqual(len(find_duplicates(jobs)), 1)
+
+    def test_same_listing_source_url_with_different_titles_does_not_merge(self) -> None:
+        jobs = [
+            self._job(
+                source_type="custom_page",
+                source_url="https://imc.com/us/search-careers",
+                apply_url="",
+                title="Principal Machine Learning Engineer",
+            ),
+            self._job(
+                source_type="custom_page",
+                source_url="https://imc.com/us/search-careers",
+                apply_url="",
+                title="Software Engineer – AI Powered Engineering",
+            ),
+        ]
+
+        self.assertEqual(find_duplicates(jobs), [])
 
     def test_same_ats_id_merges(self) -> None:
         jobs = [
@@ -150,3 +168,24 @@ class TestDuplicateDetector(unittest.TestCase):
         second = [job.id for job in deduplicate_jobs(jobs)]
 
         self.assertEqual(first, second)
+
+    def test_merge_prefers_specific_source_and_apply_urls(self) -> None:
+        generic = self._job(
+            source_type="custom_page",
+            title="Principal Machine Learning Engineer",
+            source_url="https://imc.com/us/search-careers",
+            apply_url="https://imc.com/us/search-careers",
+            description="Listing description.",
+        )
+        specific = self._job(
+            source_type="custom_page",
+            title="Principal Machine Learning Engineer",
+            source_url="https://imc.com/us/careers/jobs/4721116101",
+            apply_url="https://imc.com/us/careers/jobs/4721116101/apply",
+            description="Full role description with details.",
+        )
+
+        merged = deduplicate_jobs([generic, specific])[0]
+
+        self.assertEqual(merged.source_url, "https://imc.com/us/careers/jobs/4721116101")
+        self.assertEqual(merged.apply_url, "https://imc.com/us/careers/jobs/4721116101/apply")

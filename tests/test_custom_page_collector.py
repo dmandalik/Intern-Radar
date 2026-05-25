@@ -88,6 +88,25 @@ SPECIFIC_JOB_WITH_HOMEPAGE_APPLY_HTML = """
 </html>
 """
 
+IMC_SEARCH_CAREERS_FALLBACK_HTML = """
+<html>
+  <body>
+    <section>
+      <h2>Principal Machine Learning Engineer</h2>
+      <p>Experienced Technology Amsterdam, Chicago, Hong Kong, London, New York, Sydney</p>
+    </section>
+    <section>
+      <h2>Software Engineer – AI Powered Engineering</h2>
+      <p>Experienced Technology Chicago</p>
+    </section>
+    <div class="hidden-links">
+      <a href="/us/careers/jobs/4721116101">Principal Machine Learning Engineer Experienced Technology Amsterdam, Chicago, Hong Kong, London, New York, Sydney</a>
+      <a href="/us/careers/jobs/4682071101">Software Engineer – AI Powered Engineering Experienced Technology Chicago</a>
+    </div>
+  </body>
+</html>
+"""
+
 
 class TestCustomPageCollector(unittest.TestCase):
     def test_can_collect_returns_true_for_custom_ats_and_careers_url(self) -> None:
@@ -373,6 +392,48 @@ class TestCustomPageCollector(unittest.TestCase):
         self.assertNotIn("Recruitment process", titles)
         self.assertIn("Software Engineer Intern", titles)
         self.assertTrue(all("/careers/jobs/" in job.url for job in jobs))
+
+    def test_imc_listing_can_recover_specific_detail_links_when_role_cards_only_have_local_metadata(self) -> None:
+        software_detail_html = self._fixture_text("imc_software_engineer_intern.html")
+        client, _ = self._client_for_pages(
+            {
+                "https://www.imc.com/us/search-careers": httpx.Response(
+                    200,
+                    text=IMC_SEARCH_CAREERS_FALLBACK_HTML,
+                    headers={"content-type": "text/html"},
+                ),
+                "https://www.imc.com/us/careers/jobs/4721116101": httpx.Response(
+                    200,
+                    text=software_detail_html.replace(
+                        "Software Engineer Intern",
+                        "Principal Machine Learning Engineer",
+                    ).replace(
+                        "https://careers.imc.com/apply/software-engineer-intern-123",
+                        "https://careers.imc.com/apply/principal-machine-learning-engineer-472",
+                    ),
+                    headers={"content-type": "text/html"},
+                ),
+                "https://www.imc.com/us/careers/jobs/4682071101": httpx.Response(
+                    200,
+                    text="""<html><body><h1>Software Engineer – AI Powered Engineering</h1><div>Experienced</div><div>Technology</div><div>Chicago</div><p>Build agentic AI systems for developers.</p><a href="https://careers.imc.com/apply/software-engineer-ai-468">Apply Now</a></body></html>""",
+                    headers={"content-type": "text/html"},
+                ),
+            },
+        )
+        collector = CustomPageCollector(client=client)
+        company = Company(id="imc", name="IMC Trading", careers_url="https://www.imc.com/us/search-careers")
+
+        jobs = collector.collect(company, config={})
+        by_title = {job.title: job for job in jobs}
+
+        self.assertEqual(
+            by_title["Principal Machine Learning Engineer"].url,
+            "https://www.imc.com/us/careers/jobs/4721116101",
+        )
+        self.assertEqual(
+            by_title["Principal Machine Learning Engineer"].apply_url,
+            "https://careers.imc.com/apply/principal-machine-learning-engineer-472",
+        )
 
     def test_gresearch_engineering_page_is_not_emitted_as_a_job(self) -> None:
         engineering_html = self._fixture_text("gresearch_engineering.html")
