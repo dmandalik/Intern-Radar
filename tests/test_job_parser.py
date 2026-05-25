@@ -115,7 +115,7 @@ class TestJobParser(unittest.TestCase):
 
         self.assertEqual(job.company_id, "example-company")
         self.assertEqual(job.company_name, "Example Company")
-        self.assertEqual(job.apply_url, "https://example.com/jobs/internship")
+        self.assertEqual(job.apply_url, "")
         self.assertEqual(job.source_url, "https://example.com/jobs/internship")
         self.assertEqual(job.year, 2027)
         self.assertEqual(job.locations, [])

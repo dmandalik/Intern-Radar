@@ -66,7 +66,11 @@
                   {quickActionForJob(job)?.label}
                 </button>
               {/if}
-              <a class="ghost-button text-xs" href={job.apply_url} target="_blank" rel="noreferrer">Apply</a>
+              {#if job.apply_url}
+                <a class="ghost-button text-xs" href={job.apply_url} target="_blank" rel="noreferrer">Apply</a>
+              {:else}
+                <a class="ghost-button text-xs" href={job.source_url} target="_blank" rel="noreferrer">Source</a>
+              {/if}
             </div>
           </td>
         </tr>

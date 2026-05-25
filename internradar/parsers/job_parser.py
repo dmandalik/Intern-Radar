@@ -40,7 +40,7 @@ def normalize_raw_job(
     title = clean_text(raw_job.title) or "Untitled Job"
     description = clean_text(raw_job.description_raw) or None
     source_url = canonicalize_url(raw_job.url)
-    apply_url = canonicalize_url(raw_job.apply_url or raw_job.url)
+    apply_url = canonicalize_url(raw_job.apply_url) if raw_job.apply_url else ""
     season_result = parse_season_and_year(title, description)
     location_result = parse_location(raw_job.location_raw, description)
     company_id = _resolve_company_id(raw_job, company)

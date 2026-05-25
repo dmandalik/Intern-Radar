@@ -127,7 +127,9 @@
         <section class="glass-panel rounded-[1.4rem] p-4">
           <div class="section-eyebrow">Links</div>
           <div class="mt-3 flex flex-wrap gap-3 text-sm">
-            <a class="ghost-button" href={job.apply_url} target="_blank" rel="noreferrer">Apply</a>
+            {#if job.apply_url}
+              <a class="ghost-button" href={job.apply_url} target="_blank" rel="noreferrer">Apply</a>
+            {/if}
             <a class="ghost-button" href={job.source_url} target="_blank" rel="noreferrer">Source</a>
           </div>
         </section>
