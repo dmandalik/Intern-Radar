@@ -303,6 +303,65 @@ class TestDashboardApi(unittest.TestCase):
         self.assertEqual(payload["total"], 1)
         self.assertEqual(payload["items"][0]["id"], "job-real")
 
+    def test_dashboard_hides_low_quality_generic_custom_page_rows(self) -> None:
+        initialize_database(cwd=self.cwd)
+        from datetime import UTC, datetime
+
+        now = datetime(2026, 5, 24, 12, 0, tzinfo=UTC)
+        generic_custom = Job(
+            id="job-generic-custom",
+            company_id="imc-trading",
+            company_name="IMC Trading",
+            title="Principal Machine Learning Engineer",
+            description="Principal Machine Learning Engineer Experienced Technology Amsterdam, Chicago, Hong Kong, London, New York, Sydney",
+            apply_url="https://imc.com/us/search-careers",
+            source_url="https://imc.com/us/search-careers",
+            source_type="custom_page",
+            role=ClassifiedRole(
+                role_family="software_engineer_trading",
+                confidence=0.9,
+                evidence=["title matched strong keyword"],
+            ),
+            season=None,
+            year=None,
+            locations=["New York"],
+            remote_type=None,
+            status=JobStatusInfo(status="unknown", confidence=0.2, evidence=[], checked_at=now),
+            eligibility=EligibilityInfo(),
+            scores=JobScores(opportunity_score=76, role_fit_score=95, eligibility_score=65, hidden_gem_score=20),
+            prestige_tier="S+",
+            tags=[],
+            first_seen=now,
+            last_seen=now,
+            last_verified=now,
+            content_hash="hash-generic-custom",
+        )
+        specific_custom = make_job(job_id="job-real-custom", title="Trading Engineer - Strategy", company_name="IMC Trading")
+        specific_custom = specific_custom.model_copy(
+            update={
+                "source_type": "custom_page",
+                "source_url": "https://imc.com/us/careers/jobs/4439286101",
+                "apply_url": "https://imc.com/us/careers/jobs/4439286101/apply",
+            },
+        )
+        upsert_jobs(
+            [generic_custom, specific_custom],
+            raw_records_by_id={
+                generic_custom.id: {"source": generic_custom.source_type},
+                specific_custom.id: {"source": specific_custom.source_type},
+            },
+            cwd=self.cwd,
+        )
+        client = TestClient(create_dashboard_app(cwd=self.cwd, serve_frontend=False))
+
+        response = client.get("/api/jobs")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        ids = {item["id"] for item in payload["items"]}
+        self.assertNotIn("job-generic-custom", ids)
+        self.assertIn("job-real-custom", ids)
+
     def _seeded_client(self) -> TestClient:
         initialize_database(cwd=self.cwd)
         jobs = [

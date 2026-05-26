@@ -153,18 +153,21 @@ FUTURE_OPPORTUNITY_PATH_HINTS = (
 GENERIC_SECTION_SEGMENTS = {
     "",
     "careers",
+    "search-careers",
     "career",
     "jobs",
     "job",
     "students-graduates",
     "students-and-graduates",
     "student-opportunities",
+    "internships",
     "programs",
     "teams",
     "team",
     "engineering",
     "future-opportunities",
     "talent-community",
+    "recruitment-process",
     "about",
 }
 DIRECT_DETAIL_PATH_PATTERNS = (

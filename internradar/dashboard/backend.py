@@ -6,6 +6,7 @@ from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 from internradar.commands.scan import run_scan
 from internradar.commands.export import run_export
@@ -78,6 +79,8 @@ def load_dashboard_jobs(
     serialized: list[dict[str, Any]] = []
     for job in jobs:
         if _is_demo_job(job.id, cwd=cwd):
+            continue
+        if _is_low_quality_custom_page_job(job):
             continue
         serialized.append(_serialize_job(job, actions_by_job.get(job.id, {})))
     return serialized
@@ -215,6 +218,8 @@ def load_job_detail(
     if job is None:
         return None
     if _is_demo_job(job.id, cwd=cwd):
+        return None
+    if _is_low_quality_custom_page_job(job):
         return None
     action_state = load_user_actions(cwd=cwd).get(job.id, {})
     payload = _serialize_job(job, action_state)
@@ -463,6 +468,42 @@ def _normalized_application_status(action_state: dict[str, str]) -> str:
 def _is_demo_job(job_id: str, *, cwd: Path | None = None) -> bool:
     raw_payload = load_job_raw_payload(job_id, cwd=cwd)
     return bool(isinstance(raw_payload, dict) and raw_payload.get("artificial_demo_data"))
+
+
+def _is_low_quality_custom_page_job(job: Job) -> bool:
+    if job.source_type != "custom_page":
+        return False
+    if job.status.status in {"coming_soon", "closed", "stale"}:
+        return False
+    source_url = (job.source_url or "").strip()
+    apply_url = (job.apply_url or "").strip()
+    if not _is_generic_page_url(source_url):
+        return False
+    if apply_url and not _is_generic_page_url(apply_url):
+        return False
+    return True
+
+
+def _is_generic_page_url(url: str) -> bool:
+    if not url:
+        return True
+    path = urlparse(url).path.strip("/").casefold()
+    if not path:
+        return True
+    generic_endings = (
+        "careers",
+        "search-careers",
+        "students-graduates",
+        "students-graduates/internships",
+        "student-opportunities",
+        "future-opportunities",
+        "recruitment-process",
+        "teams/engineering",
+        "engineering",
+        "team",
+        "teams",
+    )
+    return any(path == ending or path.endswith(f"/{ending}") for ending in generic_endings)
 
 
 def _eligibility_summary(job: Job) -> str:

@@ -107,6 +107,21 @@ IMC_SEARCH_CAREERS_FALLBACK_HTML = """
 </html>
 """
 
+GENERIC_LISTING_ONLY_HTML = """
+<html>
+  <body>
+    <section>
+      <h2>Principal Machine Learning Engineer</h2>
+      <p>Experienced Technology Amsterdam, Chicago, Hong Kong, London, New York, Sydney</p>
+    </section>
+    <section>
+      <h2>Software Engineer – AI Powered Engineering</h2>
+      <p>Experienced Technology Chicago</p>
+    </section>
+  </body>
+</html>
+"""
+
 
 class TestCustomPageCollector(unittest.TestCase):
     def test_can_collect_returns_true_for_custom_ats_and_careers_url(self) -> None:
@@ -434,6 +449,23 @@ class TestCustomPageCollector(unittest.TestCase):
             by_title["Principal Machine Learning Engineer"].apply_url,
             "https://careers.imc.com/apply/principal-machine-learning-engineer-472",
         )
+
+    def test_generic_listing_without_specific_urls_is_dropped(self) -> None:
+        client, _ = self._client_for_pages(
+            {
+                "https://www.imc.com/us/search-careers": httpx.Response(
+                    200,
+                    text=GENERIC_LISTING_ONLY_HTML,
+                    headers={"content-type": "text/html"},
+                ),
+            },
+        )
+        collector = CustomPageCollector(client=client)
+        company = Company(id="imc", name="IMC Trading", careers_url="https://www.imc.com/us/search-careers")
+
+        jobs = collector.collect(company, config={})
+
+        self.assertEqual(jobs, [])
 
     def test_gresearch_engineering_page_is_not_emitted_as_a_job(self) -> None:
         engineering_html = self._fixture_text("gresearch_engineering.html")
