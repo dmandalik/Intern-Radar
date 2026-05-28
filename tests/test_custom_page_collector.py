@@ -571,6 +571,203 @@ class TestCustomPageCollector(unittest.TestCase):
 
         self.assertIn("custom_page", [collector.source_type for collector in registry.all_collectors()])
 
+    def test_imc_seed_discovery_falls_back_when_root_has_no_search_careers_anchor(self) -> None:
+        """Root page without a /search-careers anchor still locates the seed.
+
+        Regression test for the IMC "generic careers link" symptom: when the
+        root marketing HTML does not link to the search-careers endpoint, the
+        collector must still try region-aware fallback paths before giving up.
+        """
+
+        rootless_root_html = """
+        <html><body>
+          <h1>IMC Careers</h1>
+          <p>Marketing copy with no search-careers link.</p>
+        </body></html>
+        """
+        search_html = self._fixture_text("imc_search_careers.html")
+        software_detail_html = self._fixture_text("imc_software_engineer_intern.html")
+        quant_detail_html = self._fixture_text("imc_quantitative_developer_intern.html")
+        client, calls = self._client_for_pages(
+            {
+                "https://www.imc.com/us/careers/": httpx.Response(200, text=rootless_root_html, headers={"content-type": "text/html"}),
+                "https://www.imc.com/us/search-careers": httpx.Response(200, text=search_html, headers={"content-type": "text/html"}),
+                "https://www.imc.com/us/careers/jobs/1234567890": httpx.Response(200, text=software_detail_html, headers={"content-type": "text/html"}),
+                "https://www.imc.com/us/careers/jobs/2234567890": httpx.Response(200, text=quant_detail_html, headers={"content-type": "text/html"}),
+            },
+        )
+        collector = CustomPageCollector(client=client)
+        company = Company(id="imc", name="IMC Trading", careers_url="https://www.imc.com/us/careers/")
+
+        jobs = collector.collect(company, config={})
+
+        self.assertIn("https://www.imc.com/us/search-careers", calls)
+        self.assertTrue(
+            all(job.url.startswith("https://www.imc.com/us/careers/jobs/") for job in jobs),
+            f"Every IMC job must link to a specific posting, got: {[j.url for j in jobs]}",
+        )
+        self.assertGreaterEqual(len(jobs), 1)
+
+    def test_imc_seed_discovery_skips_candidates_without_specific_anchors(self) -> None:
+        """A search-careers candidate that lacks /careers/jobs/ anchors is rejected.
+
+        This prevents the collector from accepting a non-listing page (e.g. a
+        marketing landing) just because the URL pattern happened to resolve.
+        """
+
+        rootless_root_html = """
+        <html><body>
+          <p>Marketing copy with no search-careers link.</p>
+        </body></html>
+        """
+        empty_search_html = "<html><body><h1>No roles here</h1></body></html>"
+        client, calls = self._client_for_pages(
+            {
+                "https://www.imc.com/us/careers/": httpx.Response(200, text=rootless_root_html, headers={"content-type": "text/html"}),
+                "https://www.imc.com/us/search-careers": httpx.Response(200, text=empty_search_html, headers={"content-type": "text/html"}),
+            },
+        )
+        collector = CustomPageCollector(client=client)
+        company = Company(id="imc", name="IMC Trading", careers_url="https://www.imc.com/us/careers/")
+
+        jobs = collector.collect(company, config={})
+
+        # Should not emit any job since no specific anchors are discoverable.
+        self.assertEqual(jobs, [])
+
+    def test_url_specificity_guard_blocks_generic_root_url(self) -> None:
+        """A candidate whose source URL is the careers root must not slip through."""
+
+        listing_html = """
+        <html><body>
+          <section>
+            <h2>Software Engineer Intern</h2>
+            <p>Summer 2026 Chicago</p>
+          </section>
+        </body></html>
+        """
+        client, _ = self._client_for_pages(
+            {
+                "https://example.com/careers": httpx.Response(200, text=listing_html, headers={"content-type": "text/html"}),
+            },
+        )
+        collector = CustomPageCollector(client=client)
+        company = Company(
+            id="company-1",
+            name="Example",
+            careers_url="https://example.com/careers",
+            website="https://example.com",
+        )
+
+        jobs = collector.collect(company, config={})
+
+        # No specific role anchor present, so no job should leak with the
+        # generic careers URL.
+        self.assertEqual([job for job in jobs if job.url == "https://example.com/careers"], [])
+
+    def test_generic_listing_pairs_with_sibling_detail_anchors(self) -> None:
+        """Listing pages that render anchors apart from the role card still pair."""
+
+        # Simulates the IMC SPA-style layout but on a non-adapter domain.
+        page_html = """
+        <html><body>
+          <section>
+            <h2>Software Engineer Intern</h2>
+            <p>Chicago Summer 2026</p>
+          </section>
+          <section>
+            <h2>Quantitative Researcher Intern</h2>
+            <p>New York Summer 2026</p>
+          </section>
+          <div class="hidden-links">
+            <a href="/jobs/software-engineer-intern-9001">Software Engineer Intern Chicago Summer 2026</a>
+            <a href="/jobs/quant-researcher-intern-9002">Quantitative Researcher Intern New York Summer 2026</a>
+          </div>
+        </body></html>
+        """
+        detail_html = """
+        <html><body>
+          <h1>Software Engineer Intern</h1>
+          <p>Summer 2026 internship in Chicago.</p>
+          <a href="https://apply.example.com/se-intern-9001">Apply Now</a>
+        </body></html>
+        """
+        quant_detail_html = """
+        <html><body>
+          <h1>Quantitative Researcher Intern</h1>
+          <p>Summer 2026 internship in New York.</p>
+          <a href="https://apply.example.com/quant-intern-9002">Apply Now</a>
+        </body></html>
+        """
+        client, _ = self._client_for_pages(
+            {
+                "https://example.com/careers": httpx.Response(200, text=page_html, headers={"content-type": "text/html"}),
+                "https://example.com/jobs/software-engineer-intern-9001": httpx.Response(200, text=detail_html, headers={"content-type": "text/html"}),
+                "https://example.com/jobs/quant-researcher-intern-9002": httpx.Response(200, text=quant_detail_html, headers={"content-type": "text/html"}),
+            },
+        )
+        collector = CustomPageCollector(client=client)
+        company = Company(
+            id="example",
+            name="Example",
+            careers_url="https://example.com/careers",
+        )
+
+        jobs = collector.collect(company, config={})
+        by_title = {job.title: job for job in jobs}
+
+        self.assertIn("Software Engineer Intern", by_title)
+        self.assertIn("Quantitative Researcher Intern", by_title)
+        # Critical assertion: each emitted job has a specific posting URL.
+        self.assertEqual(
+            by_title["Software Engineer Intern"].url,
+            "https://example.com/jobs/software-engineer-intern-9001",
+        )
+        self.assertEqual(
+            by_title["Quantitative Researcher Intern"].url,
+            "https://example.com/jobs/quant-researcher-intern-9002",
+        )
+
+    def test_imc_detail_pairing_refuses_to_assign_arbitrary_anchor_on_no_match(self) -> None:
+        """The IMC pairing must NEVER fall back to the first available anchor.
+
+        Before the fix this caused mismatched URLs to be silently attached
+        when the anchor text and role card heading diverged.
+        """
+
+        search_html = """
+        <html><body>
+          <section>
+            <h2>Brand New Mystery Role</h2>
+            <p>Chicago Summer 2026</p>
+          </section>
+          <div class="hidden-links">
+            <a href="/us/careers/jobs/1111111111">Totally Unrelated Anchor Text</a>
+          </div>
+        </body></html>
+        """
+        client, _ = self._client_for_pages(
+            {
+                "https://www.imc.com/us/search-careers": httpx.Response(200, text=search_html, headers={"content-type": "text/html"}),
+                "https://www.imc.com/us/careers/jobs/1111111111": httpx.Response(
+                    200,
+                    text="<html><body><h1>Other Role</h1></body></html>",
+                    headers={"content-type": "text/html"},
+                ),
+            },
+        )
+        collector = CustomPageCollector(client=client)
+        company = Company(id="imc", name="IMC Trading", careers_url="https://www.imc.com/us/search-careers")
+
+        jobs = collector.collect(company, config={})
+
+        # The candidate cannot be confidently paired, so nothing should be
+        # emitted with the unrelated anchor.
+        self.assertEqual(
+            [job for job in jobs if job.url == "https://www.imc.com/us/careers/jobs/1111111111" and "Mystery" in job.title],
+            [],
+        )
+
     def _fixture_text(self, name: str) -> str:
         return (FIXTURES_DIR / name).read_text(encoding="utf-8")
 
