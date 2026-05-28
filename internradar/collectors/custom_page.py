@@ -330,6 +330,8 @@ class CustomPageCollector:
                     if verified is None:
                         continue
                     raw_job = self._candidate_to_raw_job(company, verified)
+                    if not self._passes_url_specificity_guard(raw_job, company):
+                        continue
                     key = (raw_job.title.casefold(), raw_job.url)
                     if key in seen_job_keys:
                         continue
@@ -444,18 +446,25 @@ class CustomPageCollector:
         if "/search-careers" in urlparse(root_page.final_url).path.casefold():
             return [], 0
 
-        search_url = self._find_imc_search_careers_url(root_page)
-        if not search_url:
-            return [], 0
-
-        if polite_delay_seconds > 0:
-            self._sleeper(polite_delay_seconds)
-
-        try:
-            page = self._load_page(client, search_url, cache=cache, strict=False)
-        except (InvalidConfigError, NetworkError, ParseError):
-            return [], 0
-        return [page], 1
+        candidate_urls = self._imc_search_url_candidates(root_page)
+        fetches = 0
+        for search_url in candidate_urls:
+            if pages_remaining - fetches <= 0:
+                break
+            if polite_delay_seconds > 0 and fetches > 0:
+                self._sleeper(polite_delay_seconds)
+            try:
+                page = self._load_page(client, search_url, cache=cache, strict=False)
+            except (InvalidConfigError, NetworkError, ParseError):
+                fetches += 1
+                continue
+            fetches += 1
+            if page.status_code != 200:
+                continue
+            # Only accept the seed page if it actually exposes specific role anchors.
+            if self._find_imc_job_anchors(page.soup, page.final_url):
+                return [page], fetches
+        return [], fetches
 
     def _verify_candidate(
         self,
@@ -631,6 +640,12 @@ class CustomPageCollector:
         del current_depth
         path = urlparse(page.final_url).path.casefold()
         if "/search-careers" in path:
+            # _extract_listing_candidates_from_blocks now performs the
+            # specific-anchor pairing internally via
+            # _pair_listing_candidates_with_anchors, so there is no need to
+            # call the IMC-specific assignment afterwards. We keep the safety
+            # net below as a no-op for any candidate that still points at the
+            # listing page.
             candidates = self._extract_listing_candidates_from_blocks(
                 page,
                 current_depth=0,
@@ -814,7 +829,100 @@ class CustomPageCollector:
                     status_evidence=status_evidence,
                 ),
             )
-        return candidates
+
+        # Promote any candidate that still points at the listing page itself by
+        # pairing it with a direct-detail anchor discovered elsewhere on the
+        # page. This rescues cards whose role block has no inline anchor but
+        # whose detail links live in a sibling section (common for SPA-style
+        # career portals like IMC where the cards and links are rendered apart).
+        return self._pair_listing_candidates_with_anchors(
+            page=page,
+            candidates=candidates,
+            preferred_detail_segment=preferred_detail_segment,
+        )
+
+    def _pair_listing_candidates_with_anchors(
+        self,
+        *,
+        page: ResolvedPage,
+        candidates: list[ExtractedRoleCandidate],
+        preferred_detail_segment: str | None,
+    ) -> list[ExtractedRoleCandidate]:
+        if not candidates:
+            return candidates
+        if not any(candidate.source_url == page.final_url for candidate in candidates):
+            return candidates
+
+        anchors = self._find_direct_detail_anchors(
+            page.soup,
+            page.final_url,
+            preferred_detail_segment,
+        )
+        if not anchors:
+            return candidates
+
+        remaining = list(anchors)
+        paired: list[ExtractedRoleCandidate] = []
+        for candidate in candidates:
+            if candidate.source_url != page.final_url:
+                paired.append(candidate)
+                continue
+            matched_index = self._match_candidate_to_anchor(candidate, remaining)
+            if matched_index < 0:
+                paired.append(candidate)
+                continue
+            matched_url, matched_text = remaining.pop(matched_index)
+            paired.append(
+                self._candidate_with_updates(
+                    candidate,
+                    source_url=matched_url,
+                    requested_url=matched_url,
+                    block_anchor_text=matched_text or candidate.block_anchor_text,
+                ),
+            )
+        return paired
+
+    def _find_direct_detail_anchors(
+        self,
+        soup: BeautifulSoup,
+        page_url: str,
+        preferred_segment: str | None,
+    ) -> list[tuple[str, str]]:
+        """Return (url, anchor_text) pairs that look like individual role pages.
+
+        We prefer anchors whose path contains ``preferred_segment`` (e.g. the
+        ``/careers/jobs/`` path used by IMC). Without a preferred segment we
+        fall back to the heuristic ``_looks_like_direct_detail_url`` which
+        looks for slug-style paths that mention common role terms.
+        """
+
+        anchors: list[tuple[str, str]] = []
+        seen: set[str] = set()
+        page_path = urlparse(page_url).path.casefold()
+        for anchor in soup.find_all("a", href=True):
+            href = self._clean_url(anchor.get("href"), page_url)
+            if not href:
+                continue
+            parsed = urlparse(href)
+            path = parsed.path.casefold()
+            if not path or path == page_path:
+                continue
+            if path.endswith("/apply") or path.endswith("/apply/"):
+                continue
+            if any(term in path for term in NEGATIVE_LINK_TERMS):
+                continue
+            if preferred_segment and preferred_segment in path:
+                pass
+            elif self._looks_like_direct_detail_url(href):
+                pass
+            else:
+                continue
+            if href in seen:
+                continue
+            seen.add(href)
+            text = self._clean_text(anchor.get_text(" ", strip=True))
+            anchors.append((href, text))
+        return anchors
 
     def _extract_gresearch_opportunity_links(
         self,
@@ -858,20 +966,62 @@ class CustomPageCollector:
             )
         return candidates
 
-    def _find_imc_search_careers_url(self, page: ResolvedPage) -> str | None:
+    def _imc_search_url_candidates(self, page: ResolvedPage) -> list[str]:
+        """Return a prioritized list of likely IMC search-careers URLs to probe.
+
+        We try anchors first, then region-aware path templates, then a bare
+        ``/search-careers`` fallback. Each URL is yielded at most once. Callers
+        are expected to fetch each candidate and validate it actually exposes
+        per-role anchors before treating it as the search-careers seed.
+        """
+
+        candidates: list[str] = []
+        seen: set[str] = set()
+
+        def _add(url: str) -> None:
+            if not url or url in seen:
+                return
+            seen.add(url)
+            candidates.append(url)
+
+        # 1. Explicit anchors from the root page.
         for anchor in page.soup.find_all("a", href=True):
             href = self._clean_url(anchor.get("href"), page.final_url)
+            if not href:
+                continue
             if "/search-careers" in urlparse(href).path.casefold():
-                return href
+                _add(href)
+                continue
             text = self._clean_text(anchor.get_text(" ", strip=True)).casefold()
-            if text == "search careers" and href:
-                return href
+            if text == "search careers":
+                _add(href)
+
+        # 2. Region-aware fallbacks. IMC scopes its career portal under a
+        #    region segment (``/us``, ``/eu``, ...). If the root URL has a
+        #    region, prefer it, then fall back to the well-known regions.
         parsed = urlparse(page.final_url)
+        base = f"{parsed.scheme}://{parsed.netloc}"
         segments = [segment for segment in parsed.path.split("/") if segment]
-        if not segments:
-            return f"{parsed.scheme}://{parsed.netloc}/search-careers"
-        region = segments[0]
-        return f"{parsed.scheme}://{parsed.netloc}/{region}/search-careers"
+        regions: list[str] = []
+        if segments:
+            regions.append(segments[0])
+        for region in ("us", "eu", "apac", "uk", "in"):
+            if region not in regions:
+                regions.append(region)
+
+        for region in regions:
+            for path in (
+                f"/{region}/search-careers",
+                f"/{region}/search-careers/",
+                f"/{region}/careers/search-careers/",
+                f"/{region}/careers/search-careers",
+            ):
+                _add(base + path)
+
+        # 3. Last-resort: bare /search-careers at the apex.
+        _add(base + "/search-careers")
+        _add(base + "/search-careers/")
+        return candidates
 
     def _find_imc_job_links(self, soup: BeautifulSoup, page_url: str) -> list[str]:
         return [href for href, _ in self._find_imc_job_anchors(soup, page_url)]
@@ -899,22 +1049,23 @@ class CustomPageCollector:
         if not job_anchors:
             return candidates
 
-        remaining = list(job_anchors)
+        # Drop anchors that have already been claimed by a different candidate
+        # (e.g. via the generic pairing pass inside
+        # _extract_listing_candidates_from_blocks) so we never assign the same
+        # detail URL to two distinct candidates.
+        already_used: set[str] = {
+            candidate.source_url
+            for candidate in candidates
+            if candidate.source_url and candidate.source_url != page.final_url
+        }
+        remaining = [pair for pair in job_anchors if pair[0] not in already_used]
         assigned: list[ExtractedRoleCandidate] = []
         for candidate in candidates:
             if candidate.source_url != page.final_url:
                 assigned.append(candidate)
                 continue
 
-            matched_index = -1
-            candidate_lower = candidate.title.casefold()
-            for index, (_, anchor_text) in enumerate(remaining):
-                if candidate_lower and candidate_lower in anchor_text.casefold():
-                    matched_index = index
-                    break
-            if matched_index == -1 and remaining:
-                matched_index = 0
-
+            matched_index = self._match_candidate_to_anchor(candidate, remaining)
             if matched_index >= 0:
                 matched_url, matched_text = remaining.pop(matched_index)
                 assigned.append(
@@ -926,8 +1077,51 @@ class CustomPageCollector:
                     ),
                 )
             else:
+                # Refuse to attach an arbitrary anchor when we cannot confidently
+                # pair it with this candidate. The final URL guard in collect()
+                # will drop candidates that still point at the generic listing.
                 assigned.append(candidate)
         return assigned
+
+    def _match_candidate_to_anchor(
+        self,
+        candidate: ExtractedRoleCandidate,
+        anchors: list[tuple[str, str]],
+    ) -> int:
+        """Pick the best anchor for a candidate, or -1 if no confident match."""
+
+        if not anchors:
+            return -1
+        candidate_title = candidate.title.casefold().strip()
+        if not candidate_title:
+            return -1
+
+        # Substring match first (anchor text fully contains the role title).
+        for index, (_, anchor_text) in enumerate(anchors):
+            if candidate_title in anchor_text.casefold():
+                return index
+
+        # Token-overlap fallback: pair the candidate with the anchor whose text
+        # shares the most title tokens, provided it crosses the matching
+        # threshold used elsewhere in the collector.
+        best_index = -1
+        best_score = 0
+        candidate_tokens = self._title_tokens(candidate.title)
+        if not candidate_tokens:
+            return -1
+        for index, (_, anchor_text) in enumerate(anchors):
+            anchor_tokens = self._title_tokens(anchor_text)
+            if not anchor_tokens:
+                continue
+            overlap = len(candidate_tokens & anchor_tokens)
+            denom = max(len(candidate_tokens), len(anchor_tokens))
+            if denom == 0:
+                continue
+            ratio = overlap / denom
+            if ratio >= 0.45 and overlap > best_score:
+                best_score = overlap
+                best_index = index
+        return best_index
 
     def _classify_page(self, page: ResolvedPage) -> PageClassification:
         if page.json_ld_job_postings:
@@ -1174,6 +1368,54 @@ class CustomPageCollector:
             or (candidate.apply_url and not self._is_generic_destination(candidate.apply_url))
             or (candidate.description and len(candidate.description.split()) >= 10)
         )
+
+    def _passes_url_specificity_guard(self, raw_job: RawJob, company: Company) -> bool:
+        """Final safety net: refuse to emit jobs whose URL is not role-specific.
+
+        A job is allowed through if any of the following holds:
+          * the URL is a "specific" destination (not a generic careers/listing
+            landing page and not equal to the company's careers/website URL); or
+          * the job has been explicitly flagged as ``coming_soon`` or
+            ``closed`` (watchlist entries are intentionally allowed to point at
+            the listing page because no detail URL exists yet).
+
+        This is what prevents the "every IMC internship just links to
+        ``imc.com``" failure mode regardless of which extraction path produced
+        the candidate.
+        """
+
+        url = (raw_job.url or "").strip()
+        if not url:
+            return False
+
+        status_hint = (raw_job.raw_payload or {}).get("status_hint")
+        allow_generic = status_hint in {"coming_soon", "closed"}
+
+        def _norm(value: str | None) -> str:
+            if not value:
+                return ""
+            return value.rstrip("/").casefold()
+
+        if not allow_generic:
+            if self._is_generic_destination(url):
+                return False
+            # Reject bare domains (e.g. https://www.imc.com or https://www.imc.com/).
+            parsed = urlparse(url)
+            path_segments = [segment for segment in parsed.path.split("/") if segment]
+            if not path_segments:
+                return False
+            # Reject when the URL is the company's careers landing page or
+            # marketing website unless that URL itself already looks like a
+            # specific role posting (some firms configure ``careers_url`` to
+            # point directly at one role).
+            normalized = _norm(url)
+            careers_norm = _norm(company.careers_url)
+            website_norm = _norm(company.website)
+            if careers_norm and normalized == careers_norm and not self._looks_like_direct_detail_url(url):
+                return False
+            if website_norm and normalized == website_norm:
+                return False
+        return True
 
     def _candidate_to_raw_job(self, company: Company, candidate: ExtractedRoleCandidate) -> RawJob:
         return RawJob(
