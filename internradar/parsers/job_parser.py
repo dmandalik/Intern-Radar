@@ -17,6 +17,7 @@ from internradar.core.models import (
     JobStatusInfo,
     RawJob,
 )
+from internradar.parsers.internship_tagger import apply_internship_tag
 from internradar.parsers.location_parser import parse_location
 from internradar.parsers.season_parser import parse_season_and_year
 from internradar.parsers.text_cleaner import clean_text
@@ -43,6 +44,7 @@ def normalize_raw_job(
     apply_url = canonicalize_url(raw_job.apply_url) if raw_job.apply_url else ""
     season_result = parse_season_and_year(title, description)
     location_result = parse_location(raw_job.location_raw, description)
+    is_internship, tags = apply_internship_tag(title, description)
     company_id = _resolve_company_id(raw_job, company)
     company_name = clean_text(company.name if company is not None else raw_job.company_name) or raw_job.company_name
     prestige_tier = company.default_prestige_tier if company is not None else None
@@ -85,7 +87,8 @@ def normalize_raw_job(
         eligibility=EligibilityInfo(),
         scores=JobScores(),
         prestige_tier=prestige_tier,
-        tags=[],
+        tags=tags,
+        is_internship=is_internship,
         first_seen=first_seen,
         last_seen=now,
         last_verified=now,

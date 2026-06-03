@@ -16,6 +16,8 @@ from internradar.core.errors import InvalidConfigError, NetworkError, ParseError
 from internradar.core.models import Company, RawJob
 
 GREENHOUSE_API_URL = "https://boards-api.greenhouse.io/v1/boards/{slug}/jobs"
+GREENHOUSE_API_URL_EU = "https://boards-api.eu.greenhouse.io/v1/boards/{slug}/jobs"
+GREENHOUSE_API_HOSTS = (GREENHOUSE_API_URL, GREENHOUSE_API_URL_EU)
 DEFAULT_TIMEOUT_SECONDS = 20.0
 DEFAULT_USER_AGENT = "InternRadar/0.1"
 DEFAULT_POLITE_DELAY_SECONDS = 0.0
@@ -60,59 +62,68 @@ class GreenhouseCollector:
 
         try:
             last_not_found_slug: str | None = None
-            for index, slug in enumerate(slug_candidates):
-                if index > 0 and polite_delay_seconds > 0:
-                    self._sleeper(polite_delay_seconds)
+            request_index = 0
+            for slug in slug_candidates:
+                slug_not_found_on_all_hosts = True
+                for api_url in GREENHOUSE_API_HOSTS:
+                    if request_index > 0 and polite_delay_seconds > 0:
+                        self._sleeper(polite_delay_seconds)
+                    request_index += 1
 
-                try:
-                    response = client.get(
-                        GREENHOUSE_API_URL.format(slug=slug),
-                        params={"content": "true"},
-                    )
-                except httpx.TimeoutException as exc:
-                    raise NetworkError(
-                        f"Timed out while requesting Greenhouse board '{slug}'.",
-                    ) from exc
-                except httpx.HTTPError as exc:
-                    raise NetworkError(
-                        f"HTTP error while requesting Greenhouse board '{slug}': {exc}",
-                    ) from exc
+                    try:
+                        response = client.get(
+                            api_url.format(slug=slug),
+                            params={"content": "true"},
+                        )
+                    except httpx.TimeoutException as exc:
+                        raise NetworkError(
+                            f"Timed out while requesting Greenhouse board '{slug}'.",
+                        ) from exc
+                    except httpx.HTTPError as exc:
+                        raise NetworkError(
+                            f"HTTP error while requesting Greenhouse board '{slug}': {exc}",
+                        ) from exc
 
-                if response.status_code == 404:
+                    if response.status_code == 404:
+                        # Try the next API host (e.g. EU) before declaring the
+                        # slug missing.
+                        continue
+                    slug_not_found_on_all_hosts = False
+                    if response.status_code == 429:
+                        raise RateLimitedError(
+                            f"Greenhouse rate limited requests for board '{slug}'.",
+                        )
+                    if 400 <= response.status_code < 500:
+                        raise InvalidConfigError(
+                            f"Greenhouse board '{slug}' returned HTTP {response.status_code}.",
+                        )
+                    if response.status_code >= 500:
+                        raise NetworkError(
+                            f"Greenhouse board '{slug}' returned HTTP {response.status_code}.",
+                        )
+
+                    try:
+                        payload = response.json()
+                    except ValueError as exc:
+                        raise ParseError(
+                            f"Greenhouse board '{slug}' returned invalid JSON.",
+                        ) from exc
+
+                    if not isinstance(payload, dict):
+                        raise ParseError(
+                            f"Greenhouse board '{slug}' returned an unexpected response shape.",
+                        )
+
+                    jobs = payload.get("jobs")
+                    if not isinstance(jobs, list):
+                        raise ParseError(
+                            f"Greenhouse board '{slug}' did not contain a valid jobs list.",
+                        )
+
+                    return [self._build_raw_job(company, slug, job) for job in jobs]
+
+                if slug_not_found_on_all_hosts:
                     last_not_found_slug = slug
-                    continue
-                if response.status_code == 429:
-                    raise RateLimitedError(
-                        f"Greenhouse rate limited requests for board '{slug}'.",
-                    )
-                if 400 <= response.status_code < 500:
-                    raise InvalidConfigError(
-                        f"Greenhouse board '{slug}' returned HTTP {response.status_code}.",
-                    )
-                if response.status_code >= 500:
-                    raise NetworkError(
-                        f"Greenhouse board '{slug}' returned HTTP {response.status_code}.",
-                    )
-
-                try:
-                    payload = response.json()
-                except ValueError as exc:
-                    raise ParseError(
-                        f"Greenhouse board '{slug}' returned invalid JSON.",
-                    ) from exc
-
-                if not isinstance(payload, dict):
-                    raise ParseError(
-                        f"Greenhouse board '{slug}' returned an unexpected response shape.",
-                    )
-
-                jobs = payload.get("jobs")
-                if not isinstance(jobs, list):
-                    raise ParseError(
-                        f"Greenhouse board '{slug}' did not contain a valid jobs list.",
-                    )
-
-                return [self._build_raw_job(company, slug, job) for job in jobs]
 
             raise InvalidConfigError(
                 f"Greenhouse board was not found for company '{company.name}'"
