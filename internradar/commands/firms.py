@@ -7,6 +7,8 @@ from typing import Optional
 
 import typer
 
+from internradar.collectors.ats_resolver import ATSResolution, resolve_ats_for_firms
+from internradar.core.config import load_config
 from internradar.core.models import Company
 from internradar.core.pack_loader import (
     PackLoaderError,
@@ -111,6 +113,118 @@ def validate(
 
     typer.echo("Validation: failed")
     raise typer.Exit(1)
+
+
+@app.command("resolve-ats")
+def resolve_ats(
+    pack: str = typer.Option(..., "--pack", help="Pack name to load."),
+    company: Optional[str] = typer.Option(
+        None,
+        "--company",
+        help="Restrict resolution to firms matching this ID, name, or alias.",
+    ),
+    only_custom: bool = typer.Option(
+        False,
+        "--only-custom",
+        help="Only probe firms still marked ats_type: custom (or unset).",
+    ),
+    changed_only: bool = typer.Option(
+        False,
+        "--changed-only",
+        help="Only show firms whose resolved ATS differs from their config.",
+    ),
+    project_root: Optional[Path] = typer.Option(
+        None,
+        "--project-root",
+        help="Override the project root when resolving packs.",
+        hidden=True,
+    ),
+) -> None:
+    """Probe live ATS APIs to discover each firm's real board (read-only)."""
+    try:
+        firms = load_pack_firms(pack, root=project_root)
+    except (PackLoaderError, PackValidationError) as exc:
+        typer.echo(f"Error: {exc}")
+        raise typer.Exit(1) from exc
+
+    if company:
+        firms = search_firms(firms, company)
+        if not firms:
+            typer.echo(f"No firms matched '{company}'.")
+            raise typer.Exit(1)
+
+    if only_custom:
+        firms = [
+            firm
+            for firm in firms
+            if not firm.ats_type or firm.ats_type.casefold() == "custom"
+        ]
+
+    if not firms:
+        typer.echo("No firms to resolve after filtering.")
+        return
+
+    config = load_config()
+    typer.echo(f"Probing {len(firms)} firm(s) across Greenhouse/Lever/Ashby/Workday...")
+    resolutions = resolve_ats_for_firms(
+        sorted(firms, key=lambda firm: firm.name.casefold()),
+        config,
+    )
+
+    if changed_only:
+        resolutions = [resolution for resolution in resolutions if resolution.changed]
+        if not resolutions:
+            typer.echo("No firms changed; configuration matches live ATS boards.")
+            return
+
+    _render_resolution_report(resolutions)
+
+
+def _render_resolution_report(resolutions: list[ATSResolution]) -> None:
+    resolved = [resolution for resolution in resolutions if resolution.is_resolved]
+    unresolved = [resolution for resolution in resolutions if not resolution.is_resolved]
+    changed = [resolution for resolution in resolutions if resolution.changed]
+
+    typer.echo("")
+    typer.echo(f"Resolved: {len(resolved)}  Unresolved: {len(unresolved)}  Changed: {len(changed)}")
+    typer.echo("")
+
+    for resolution in resolutions:
+        if resolution.is_resolved:
+            target = _format_resolution_target(resolution)
+            marker = "*" if resolution.changed else " "
+            count = "" if resolution.job_count is None else f" ({resolution.job_count} jobs)"
+            current = resolution.current_ats_type or "custom"
+            typer.echo(
+                f"{marker} {resolution.company_name}: {current} -> {target}{count}",
+            )
+        else:
+            typer.echo(f"  {resolution.company_name}: unresolved")
+        if resolution.notes:
+            typer.echo(f"      note: {resolution.notes}")
+
+    if changed:
+        typer.echo("")
+        typer.echo("Suggested firms.yaml edits (* rows above):")
+        for resolution in changed:
+            typer.echo(f"- id: {resolution.company_id}")
+            typer.echo(f"  ats_type: {resolution.resolved_ats_type}")
+            if resolution.resolved_ats_type == "workday":
+                typer.echo("  ats_slug: null")
+                typer.echo(f"  ats_tenant: {resolution.resolved_tenant}")
+                typer.echo(f"  ats_datacenter: {resolution.resolved_datacenter}")
+                typer.echo(f"  ats_site: {resolution.resolved_site}")
+            else:
+                typer.echo(f"  ats_slug: {resolution.resolved_slug}")
+
+
+def _format_resolution_target(resolution: ATSResolution) -> str:
+    if resolution.resolved_ats_type == "workday":
+        return (
+            f"workday[{resolution.resolved_tenant}/"
+            f"{resolution.resolved_datacenter}/{resolution.resolved_site}]"
+        )
+    return f"{resolution.resolved_ats_type}[{resolution.resolved_slug}]"
 
 
 def _render_firms_table(firms: list[Company]) -> None:

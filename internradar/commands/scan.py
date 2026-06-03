@@ -93,6 +93,7 @@ class ScanSummary:
     role_family_counts: dict[str, int] = field(default_factory=dict)
     errors: list[CollectorError] = field(default_factory=list)
     skipped_no_collector: list[str] = field(default_factory=list)
+    firms_without_jobs: list[str] = field(default_factory=list)
     started_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     completed_at: datetime | None = None
     persisted: bool = False
@@ -233,6 +234,8 @@ def run_scan(
         )
         summary.raw_jobs_found += len(raw_jobs)
         summary.errors.extend(errors)
+        if not raw_jobs and not errors:
+            summary.firms_without_jobs.append(plan.company.name)
         for raw_job in raw_jobs:
             raw_job_counter[raw_job.source_type] += 1
             normalized_records.append(
@@ -537,6 +540,7 @@ def _summary_payload(summary: ScanSummary) -> dict[str, Any]:
         "jobs_by_source": summary.jobs_by_source,
         "status_counts": summary.status_counts,
         "role_family_counts": summary.role_family_counts,
+        "firms_without_jobs": summary.firms_without_jobs,
     }
 
 
@@ -587,6 +591,8 @@ def _render_scan_summary(summary: ScanSummary, *, verbose: bool) -> None:
         typer.echo(f"Changed jobs: {summary.changed_jobs}")
     if summary.skipped_no_collector:
         typer.echo(f"Firms without collectors: {len(summary.skipped_no_collector)}")
+    if summary.firms_without_jobs:
+        typer.echo(f"Firms with 0 jobs (completeness audit): {len(summary.firms_without_jobs)}")
 
     if summary.jobs_by_source:
         typer.echo("")
@@ -608,6 +614,16 @@ def _render_scan_summary(summary: ScanSummary, *, verbose: bool) -> None:
     elif summary.errors:
         typer.echo("")
         typer.echo("Rerun with --verbose to see collector error details.")
+
+    if summary.firms_without_jobs:
+        typer.echo("")
+        if verbose:
+            typer.echo("Completeness audit (0 jobs, no error):")
+            for firm_name in summary.firms_without_jobs:
+                typer.echo(f"- {firm_name}")
+            typer.echo("Run `internradar firms resolve-ats --pack <pack> --only-custom` to re-probe ATS slugs.")
+        else:
+            typer.echo("Some firms returned 0 jobs. Rerun with --verbose to list them.")
 
     if summary.persistence_warning:
         typer.echo("")
