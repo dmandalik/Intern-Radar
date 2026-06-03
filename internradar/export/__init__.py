@@ -85,6 +85,7 @@ class ExportJobView:
             "Title": self.title,
             "Role Family": self.role_family,
             "Role Subtype": self.role_subtype,
+            "Internship": "Yes" if self.job.is_internship else "No",
             "Status": self.status,
             "Season": self.job.season or "",
             "Year": self.job.year or "",

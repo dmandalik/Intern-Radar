@@ -191,7 +191,7 @@ metadata = payload["metadata"]
 
 def headers():
     return [
-        "Rank","Company","Title","Role Family","Role Subtype","Status","Season","Year","Location",
+        "Rank","Company","Title","Role Family","Role Subtype","Internship","Status","Season","Year","Location",
         "Remote Type","Apply URL","Source URL","Prestige Tier","Opportunity Score","Role Fit Score",
         "Technical Depth Score","Eligibility Score","Hidden Gem Score","Freshness Score","First Seen",
         "Last Seen","Last Verified","Application Status","Eligibility Summary","Why Ranked","Notes"

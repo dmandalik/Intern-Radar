@@ -100,6 +100,7 @@ def filter_dashboard_jobs(
     source_type: str | None = None,
     remote_type: str | None = None,
     sponsorship: str | None = None,
+    is_internship: bool | None = None,
     min_opportunity_score: float | None = None,
     min_hidden_gem_score: float | None = None,
     min_eligibility_score: float | None = None,
@@ -139,6 +140,8 @@ def filter_dashboard_jobs(
     if sponsorship:
         needle = sponsorship.casefold()
         filtered = [job for job in filtered if (job["eligibility"]["sponsorship"] or "").casefold() == needle]
+    if is_internship is not None:
+        filtered = [job for job in filtered if bool(job["is_internship"]) is is_internship]
     if min_opportunity_score is not None:
         filtered = [job for job in filtered if float(job["scores"]["opportunity_score"]) >= min_opportunity_score]
     if min_hidden_gem_score is not None:
@@ -282,6 +285,7 @@ def load_dashboard_summary(
             "saved": saved_count,
             "applied": applied_count,
             "review_needed": len(review_needed),
+            "internships": sum(1 for job in jobs if job["is_internship"]),
         },
         "apply_first": open_jobs[:5],
         "signals": {
@@ -425,6 +429,7 @@ def _serialize_job(job: Job, action_state: dict[str, str]) -> dict[str, Any]:
         "score_explanation": list(job.scores.explanation),
         "prestige_tier": job.prestige_tier,
         "tags": list(job.tags),
+        "is_internship": job.is_internship,
         "first_seen": job.first_seen.isoformat(),
         "last_seen": job.last_seen.isoformat(),
         "last_verified": job.last_verified.isoformat(),

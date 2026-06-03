@@ -26,6 +26,9 @@ class Company(BaseModel):
     careers_url: str | None = None
     ats_type: str | None = None
     ats_slug: str | None = None
+    ats_tenant: str | None = None
+    ats_datacenter: str | None = None
+    ats_site: str | None = None
     categories: list[str] = Field(default_factory=list)
     default_prestige_tier: str | None = None
     locations: list[str] = Field(default_factory=list)
@@ -107,6 +110,7 @@ class Job(BaseModel):
     scores: JobScores
     prestige_tier: str | None = None
     tags: list[str] = Field(default_factory=list)
+    is_internship: bool = False
     first_seen: datetime
     last_seen: datetime
     last_verified: datetime
