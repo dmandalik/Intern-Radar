@@ -4,8 +4,8 @@ firms:
   aliases: []
   website: https://www.janestreet.com
   careers_url: https://www.janestreet.com/join-jane-street/open-roles/
-  ats_type: custom
-  ats_slug: null
+  ats_type: greenhouse
+  ats_slug: janestreet
   categories:
   - prop_trading
   - trading_systems
@@ -62,8 +62,8 @@ firms:
   - HRT
   website: https://www.hudsonrivertrading.com
   careers_url: https://www.hudsonrivertrading.com/careers/
-  ats_type: custom
-  ats_slug: null
+  ats_type: greenhouse
+  ats_slug: wehrtyou
   categories:
   - prop_trading
   - trading_systems
@@ -82,8 +82,8 @@ firms:
   - IMC
   website: https://www.imc.com
   careers_url: https://www.imc.com/us/careers/
-  ats_type: custom
-  ats_slug: null
+  ats_type: greenhouse
+  ats_slug: imc
   categories:
   - prop_trading
   - trading_systems
@@ -101,8 +101,8 @@ firms:
   aliases: []
   website: https://www.optiver.com
   careers_url: https://optiver.com/working-at-optiver/career-opportunities/
-  ats_type: custom
-  ats_slug: null
+  ats_type: greenhouse
+  ats_slug: optiverus
   categories:
   - prop_trading
   - trading_systems
@@ -121,8 +121,8 @@ firms:
   - DRW Trading
   website: https://www.drw.com
   careers_url: https://www.drw.com/work-at-drw/listings/
-  ats_type: custom
-  ats_slug: null
+  ats_type: greenhouse
+  ats_slug: drweng
   categories:
   - prop_trading
   - trading_systems
@@ -136,8 +136,8 @@ firms:
   aliases: []
   website: https://www.jumptrading.com
   careers_url: https://www.jumptrading.com/careers/
-  ats_type: custom
-  ats_slug: null
+  ats_type: greenhouse
+  ats_slug: jumptrading
   categories:
   - prop_trading
   - trading_systems
@@ -156,8 +156,8 @@ firms:
   - Tower Research
   website: https://www.tower-research.com
   careers_url: https://www.tower-research.com/open-positions/
-  ats_type: custom
-  ats_slug: null
+  ats_type: greenhouse
+  ats_slug: towerresearchcapital
   categories:
   - prop_trading
   - trading_systems
@@ -219,8 +219,8 @@ firms:
   aliases: []
   website: https://akunacapital.com
   careers_url: https://akunacapital.com/careers
-  ats_type: custom
-  ats_slug: null
+  ats_type: greenhouse
+  ats_slug: akunacapital
   categories:
   - prop_trading
   - trading_systems
@@ -234,8 +234,8 @@ firms:
   aliases: []
   website: https://www.flowtraders.com
   careers_url: https://www.flowtraders.com/careers/
-  ats_type: custom
-  ats_slug: null
+  ats_type: greenhouse
+  ats_slug: flowtraders
   categories:
   - market_making
   - low_latency
@@ -263,8 +263,8 @@ firms:
   aliases: []
   website: https://www.oldmissioncapital.com
   careers_url: https://www.oldmissioncapital.com/careers
-  ats_type: custom
-  ats_slug: null
+  ats_type: greenhouse
+  ats_slug: oldmissioncapital
   categories:
   - market_making
   - low_latency
@@ -293,8 +293,8 @@ firms:
   aliases: []
   website: https://www.valkyrietrading.com
   careers_url: https://www.valkyrietrading.com/careers
-  ats_type: custom
-  ats_slug: null
+  ats_type: lever
+  ats_slug: valkyrietrading
   categories:
   - prop_trading
   - trading_systems
@@ -308,8 +308,8 @@ firms:
   aliases: []
   website: https://www.genevatrading.com
   careers_url: https://www.genevatrading.com/careers
-  ats_type: custom
-  ats_slug: null
+  ats_type: greenhouse
+  ats_slug: genevatrading
   categories:
   - prop_trading
   - trading_systems
@@ -323,8 +323,8 @@ firms:
   aliases: []
   website: https://www.belvederetrading.com
   careers_url: https://www.belvederetrading.com/careers
-  ats_type: custom
-  ats_slug: null
+  ats_type: lever
+  ats_slug: belvederetrading
   categories:
   - prop_trading
   - trading_systems
@@ -339,8 +339,8 @@ firms:
   - Chicago Trading Company
   website: https://www.ctc.trading
   careers_url: https://www.ctc.trading/careers/
-  ats_type: custom
-  ats_slug: null
+  ats_type: greenhouse
+  ats_slug: chicagotrading
   categories:
   - prop_trading
   - trading_systems
@@ -384,8 +384,8 @@ firms:
   aliases: []
   website: https://www.virtu.com
   careers_url: https://www.virtu.com/careers/
-  ats_type: custom
-  ats_slug: null
+  ats_type: greenhouse
+  ats_slug: virtu
   categories:
   - market_making
   - low_latency
@@ -399,8 +399,8 @@ firms:
   aliases: []
   website: https://fiverings.com
   careers_url: https://fiverings.com/careers/
-  ats_type: custom
-  ats_slug: null
+  ats_type: greenhouse
+  ats_slug: fiveringsllc
   categories:
   - prop_trading
   - trading_systems
@@ -433,8 +433,8 @@ firms:
   - PDT
   website: https://www.pdtpartners.com
   careers_url: https://www.pdtpartners.com/join-us/
-  ats_type: custom
-  ats_slug: null
+  ats_type: greenhouse
+  ats_slug: pdtpartners
   categories:
   - hedge_fund
   - quant_developer
@@ -455,14 +455,15 @@ firms:
   - systematic
   default_prestige_tier: tier_2
   locations: []
-  notes: null
+  notes: Shares the Point72 Greenhouse board; kept on custom to avoid double-counting
+    the point72 firm's jobs.
 - id: transmarket-group
   name: TransMarket Group
   aliases: []
   website: https://www.transmarketgroup.com
   careers_url: https://www.transmarketgroup.com/careers/
-  ats_type: custom
-  ats_slug: null
+  ats_type: greenhouse
+  ats_slug: transmarketgroup
   categories:
   - prop_trading
   - trading_systems
@@ -491,8 +492,11 @@ firms:
   aliases: []
   website: https://www.gresearch.com
   careers_url: https://www.gresearch.com/careers/
-  ats_type: custom
+  ats_type: workday
   ats_slug: null
+  ats_tenant: gresearch
+  ats_datacenter: wd103
+  ats_site: G-Research
   categories:
   - hedge_fund
   - quant_developer
@@ -533,8 +537,8 @@ firms:
   aliases: []
   website: https://www.man.com
   careers_url: https://www.man.com/careers
-  ats_type: custom
-  ats_slug: null
+  ats_type: greenhouse
+  ats_slug: mangroup
   categories:
   - asset_management
   - systematic
@@ -547,8 +551,8 @@ firms:
   aliases: []
   website: https://www.winton.com
   careers_url: https://www.winton.com/careers
-  ats_type: custom
-  ats_slug: null
+  ats_type: greenhouse
+  ats_slug: winton
   categories:
   - asset_management
   - systematic
@@ -561,8 +565,8 @@ firms:
   aliases: []
   website: https://www.squarepoint-capital.com
   careers_url: https://www.squarepoint-capital.com/careers
-  ats_type: custom
-  ats_slug: null
+  ats_type: greenhouse
+  ats_slug: squarepointcapital
   categories:
   - hedge_fund
   - quant_developer
@@ -575,8 +579,8 @@ firms:
   aliases: []
   website: https://www.schonfeld.com
   careers_url: https://www.schonfeld.com/careers
-  ats_type: custom
-  ats_slug: null
+  ats_type: greenhouse
+  ats_slug: schonfeld
   categories:
   - hedge_fund
   - quant_developer
@@ -604,8 +608,8 @@ firms:
   aliases: []
   website: https://www.exoduspoint.com
   careers_url: https://www.exoduspoint.com/careers
-  ats_type: custom
-  ats_slug: null
+  ats_type: greenhouse
+  ats_slug: exoduspoint
   categories:
   - hedge_fund
   - quant_developer
@@ -618,8 +622,8 @@ firms:
   aliases: []
   website: https://www.mwam.com
   careers_url: https://www.mwam.com/careers
-  ats_type: custom
-  ats_slug: null
+  ats_type: greenhouse
+  ats_slug: marshallwace
   categories:
   - hedge_fund
   - quant_developer
@@ -633,8 +637,8 @@ firms:
   - AQR
   website: https://www.aqr.com
   careers_url: https://www.aqr.com/About-Us/Careers
-  ats_type: custom
-  ats_slug: null
+  ats_type: greenhouse
+  ats_slug: aqr
   categories:
   - asset_management
   - systematic
@@ -647,8 +651,8 @@ firms:
   aliases: []
   website: https://www.worldquant.com
   careers_url: https://www.worldquant.com/careers/
-  ats_type: custom
-  ats_slug: null
+  ats_type: greenhouse
+  ats_slug: worldquant
   categories:
   - hedge_fund
   - quant_developer
@@ -704,8 +708,8 @@ firms:
   aliases: []
   website: https://www.dvtrading.co
   careers_url: https://www.dvtrading.co/careers
-  ats_type: custom
-  ats_slug: null
+  ats_type: greenhouse
+  ats_slug: dvtrading
   categories:
   - prop_trading
   - trading_systems
@@ -749,8 +753,8 @@ firms:
   aliases: []
   website: https://www.aquatic.com
   careers_url: https://www.aquatic.com/careers
-  ats_type: custom
-  ats_slug: null
+  ats_type: ashby
+  ats_slug: aquatic
   categories:
   - hedge_fund
   - quant_developer
@@ -807,8 +811,8 @@ firms:
   aliases: []
   website: https://www.voleon.com
   careers_url: https://www.voleon.com/careers/
-  ats_type: custom
-  ats_slug: null
+  ats_type: lever
+  ats_slug: voleon
   categories:
   - hedge_fund
   - quant_developer
@@ -821,8 +825,8 @@ firms:
   aliases: []
   website: https://www.point72.com
   careers_url: https://careers.point72.com
-  ats_type: custom
-  ats_slug: null
+  ats_type: greenhouse
+  ats_slug: point72
   categories:
   - hedge_fund
   - quant_developer
